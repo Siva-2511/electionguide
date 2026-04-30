@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-blue)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green)](https://flask.palletsprojects.com)
 [![Gemini](https://img.shields.io/badge/Gemini-AI-orange)](https://ai.google.dev)
-[![CI Pipeline](https://github.com/YOUR_USERNAME/electionguide/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/electionguide/actions/workflows/ci.yml)
+[![CI Pipeline](https://github.com/Siva-2511/electionguide/actions/workflows/ci.yml/badge.svg)](https://github.com/Siva-2511/electionguide/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-94%25-success)](#-testing)
 [![License](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
 
@@ -139,7 +139,7 @@ ElectionGuide/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/electionguide.git
+git clone https://github.com/Siva-2511/electionguide.git
 cd electionguide
 ```
 
