@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0"/>
+  <meta name="description" content="Election Timeline – Step-by-step guide for India, US, UK, Australia and Canada elections."/>
+  <title>Election Timeline – ElectionGuide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+  <style>
+    /* Timeline-page extras */
+    .tl-nav-links{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .card{word-break:break-word;overflow-wrap:break-word}
+    .location-card{background:#f8f9fa;border-radius:8px;padding:10px;border:1px solid #dadce0;word-break:break-word}
+    .key-dates-card{background:linear-gradient(135deg,var(--c-active,#ff6f00) 0%,var(--c-active-d,#e65100) 100%);color:#fff}
+    .key-dates-card .card-title{color:#fff}
+    .tl-info-card{background:linear-gradient(135deg,#e8f0fe 0%,#d2e3fc 100%);border-left:4px solid var(--c-active,#1a73e8)}
+    .world-step{padding:12px 0;border-bottom:1px solid #dadce0;font-size:.88rem}
+    .world-step:last-child{border-bottom:none}
+    .world-step h3{font-size:.95rem;font-weight:700;margin-bottom:4px;color:var(--c-active,#1a73e8)}
+    .world-step ul{padding-left:1.1rem;color:#5f6368;margin-top:4px}
+    .world-step ul li{margin-bottom:3px}
+    a{color:var(--c-active,#1a73e8)}
+    /* Fix translate widget in nav */
+    .lang-select{padding:4px 8px;background:#f8f9fa;border:1px solid #dadce0;border-radius:20px;font-size:.78rem;cursor:pointer;max-width:110px}
+  </style>
+</head>
+<body class="country-{{ country }}">
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="nav-brand">
+      <span class="nav-logo" aria-hidden="true">🗳️</span>
+      <span class="nav-title">ElectionGuide</span>
+    </div>
+    <div class="nav-right tl-nav-links">
+      <label for="tl-lang" class="sr-only">Select language</label>
+      <select id="tl-lang" class="lang-select" aria-label="Select language" onchange="tlLang(this.value)">
+        <option value="">🌐 Language</option>
+        <optgroup label="Indian">
+          <option value="ta">Tamil</option><option value="hi">Hindi</option>
+          <option value="te">Telugu</option><option value="kn">Kannada</option>
+          <option value="ml">Malayalam</option><option value="bn">Bengali</option>
+        </optgroup>
+        <optgroup label="International">
+          <option value="en">English</option><option value="es">Español</option>
+          <option value="fr">Français</option><option value="ar">العربية</option>
+          <option value="zh-CN">中文</option><option value="de">Deutsch</option>
+          <option value="ja">日本語</option><option value="pt">Português</option>
+        </optgroup>
+      </select>
+      <div id="gte" style="display:none" aria-hidden="true"></div>
+      <a href="/" class="nav-link">← Assistant</a>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        <a href="/timeline?country=india" class="btn btn-sm {% if country=='india' %}btn-primary{% else %}btn-outline{% endif %}">🇮🇳</a>
+        <a href="/timeline?country=us"    class="btn btn-sm {% if country=='us'    %}btn-primary{% else %}btn-outline{% endif %}">🇺🇸</a>
+        <a href="/timeline?country=uk"    class="btn btn-sm {% if country=='uk'    %}btn-primary{% else %}btn-outline{% endif %}">🇬🇧</a>
+        <a href="/timeline?country=australia" class="btn btn-sm {% if country=='australia' %}btn-primary{% else %}btn-outline{% endif %}">🇦🇺</a>
+        <a href="/timeline?country=canada" class="btn btn-sm {% if country=='canada' %}btn-primary{% else %}btn-outline{% endif %}">🇨🇦</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main-content" class="timeline-layout">
+    <header class="page-header">
+      <h1 class="page-title">
+        {% if country=='india' %}🇮🇳 {{ election.election_label }} 2026
+        {% elif country=='us' %}🇺🇸 US Election Timeline
+        {% elif country=='uk' %}🇬🇧 UK Election Timeline
+        {% elif country=='australia' %}🇦🇺 Australia Election Timeline
+        {% elif country=='canada' %}🇨🇦 Canada Election Timeline
+        {% else %}🗳️ Election Timeline{% endif %}
+      </h1>
+      <p class="page-subtitle">
+        {% if country=='india' %}{{ election.election_label }} &nbsp;·&nbsp; Voting: {{ election.election_day }} &nbsp;·&nbsp; Result: {{ election.result_date }}
+        {% elif election %}{{ election.election_name }}{% endif %}
+      </p>
+    </header>
+
+    {# ── INDIA ── #}
+    {% if country=='india' and election %}
+    <section class="card" style="margin-bottom: 1.5rem;" aria-labelledby="h-title">
+      <h2 id="h-title" class="card-title" style="font-size:1.3rem; margin-bottom: 1rem; color: #e65100;">🇮🇳 Tamil Nadu Legislative Assembly Election 2026</h2>
+      <p style="margin-bottom:0.5rem"><strong>Election Type:</strong> Tamil Nadu Legislative Assembly Election</p>
+      <p style="margin-bottom:0.5rem"><strong>Voting System:</strong> Voters elect 234 MLAs</p>
+      <p><strong>Government Formation:</strong> Majority party/alliance forms government and selects Chief Minister</p>
+    </section>
+
+    <section class="card key-dates-card" aria-labelledby="h-ov">
+      <h2 id="h-ov" class="card-title">📊 Election Overview</h2>
+      <div class="dates-grid">
+        <div class="date-item"><span class="date-label">Total Assembly Seats</span><span class="date-value">234</span></div>
+        <div class="date-item"><span class="date-label">Voting Method</span><span class="date-value">EVM with VVPAT</span></div>
+        <div class="date-item"><span class="date-label">Total Voters (approx)</span><span class="date-value">~6.2 crore (62+ million)</span></div>
+        <div class="date-item"><span class="date-label">Election Type</span><span class="date-value">Single-phase state election</span></div>
+        <div class="date-item date-item--highlight"><span class="date-label">Result Declaration</span><span class="date-value">May 4, 2026 (expected)</span></div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-ph">
+      <h2 id="h-ph" class="card-title">🗓️ Voting Schedule</h2>
+      <div class="phase-card" style="margin-top:0.8rem;">
+        <strong>🗳️ Single Phase Election</strong>
+        <p style="margin-top:0.4rem; font-size:0.95rem;"><strong>Voting Day:</strong> April 23, 2026</p>
+        <p style="margin-top:0.2rem; font-size:0.95rem;"><strong>Coverage:</strong> Entire Tamil Nadu (234 constituencies)</p>
+        <p style="margin-top:0.2rem; font-size:0.95rem;"><strong>System:</strong> Single-day polling across all districts</p>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-reg">
+      <h2 id="h-reg" class="card-title">📝 How to Vote in India</h2>
+      <ol class="timeline" role="list" style="margin-top:.75rem">
+        <li class="timeline-item"><div class="timeline-marker">1</div>
+          <div class="timeline-content">
+            <h3 class="timeline-step-title" style="color:#e65100">Check Eligibility</h3>
+            <p>18+ years, Indian citizen, registered in Electoral Roll.</p>
+            <ul class="timeline-details"><li>Min age: <strong>18 years</strong></li><li>Indian citizen</li><li>Valid ID required</li></ul>
+          </div>
+        </li>
+        <li class="timeline-item"><div class="timeline-marker" style="background:#ff6f00">2</div>
+          <div class="timeline-content">
+            <h3 class="timeline-step-title" style="color:#e65100">Register Online</h3>
+            <p>Visit <a href="https://voters.eci.gov.in" target="_blank" rel="noopener noreferrer">voters.eci.gov.in</a> — submit Form 6.</p>
+            <ul class="timeline-details"><li>Upload photo + address + age proof</li><li>Check list: <a href="https://electoralsearch.eci.gov.in" target="_blank" rel="noopener noreferrer">electoralsearch.eci.gov.in</a></li></ul>
+          </div>
+        </li>
+        <li class="timeline-item"><div class="timeline-marker" style="background:#ff6f00">3</div>
+          <div class="timeline-content">
+            <h3 class="timeline-step-title" style="color:#e65100">Voting Day (EVM)</h3>
+            <p>Go to your polling booth with EPIC or any approved photo ID.</p>
+            <ul class="timeline-details"><li>Hours: <strong>{{ election.voting_hours }}</strong></li><li>Vote via EVM</li><li>VVPAT confirms your vote</li></ul>
+          </div>
+        </li>
+        <li class="timeline-item"><div class="timeline-marker timeline-marker--last">4</div>
+          <div class="timeline-content">
+            <h3 class="timeline-step-title" style="color:#34a853">Results</h3>
+            <p>Counting starts after all phases. Results on <strong>{{ election.result_date }}</strong>.</p>
+            <ul class="timeline-details"><li><a href="https://results.eci.gov.in" target="_blank" rel="noopener noreferrer">results.eci.gov.in</a></li><li>Report: <a href="https://cvigil.eci.gov.in" target="_blank" rel="noopener noreferrer">cvigil.eci.gov.in</a></li></ul>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    {% if election.id_types_accepted %}
+    <section class="card" aria-labelledby="h-id">
+      <h2 id="h-id" class="card-title">🪪 Accepted IDs (12 types)</h2>
+      <div class="locations-grid">
+        {% for id in election.id_types_accepted %}<div class="location-card"><p class="location-name">{{ id }}</p></div>{% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- PM Election Future Note -->
+    {% if election.pm_election_future %}
+    <section class="card" style="background:linear-gradient(135deg,#e8f5e9,#c8e6c9);border-left:4px solid #2e7d32;" aria-labelledby="h-pm">
+      <h2 id="h-pm" class="card-title" style="color:#1b5e20">🗳️ {{ election.pm_election_future.label }}</h2>
+      <p>{{ election.pm_election_future.note }}</p>
+      <blockquote style="margin:.8rem 0 0;padding:.6rem 1rem;border-left:3px solid #2e7d32;color:#2e7d32;font-style:italic;font-size:.9rem">
+        {{ election.pm_election_future.quote }}
+      </blockquote>
+    </section>
+    {% endif %}
+      <h2 id="h-lk" class="card-title">🔗 Official Links</h2>
+      <div class="locations-grid">
+        <div class="location-card"><strong>Register</strong><br/><a href="https://voters.eci.gov.in" target="_blank" rel="noopener noreferrer">voters.eci.gov.in</a></div>
+        <div class="location-card"><strong>Voter Search</strong><br/><a href="https://electoralsearch.eci.gov.in" target="_blank" rel="noopener noreferrer">electoralsearch.eci.gov.in</a></div>
+        <div class="location-card"><strong>Results</strong><br/><a href="https://results.eci.gov.in" target="_blank" rel="noopener noreferrer">results.eci.gov.in</a></div>
+        <div class="location-card"><strong>Report Issue</strong><br/><a href="https://cvigil.eci.gov.in" target="_blank" rel="noopener noreferrer">cvigil.eci.gov.in</a></div>
+      </div>
+      <p class="data-notice">ℹ️ {{ election.get('note','') }}</p>
+    </section>
+
+    {# ── US ── #}
+    {% elif country=='us' %}
+    {% if election %}
+    <section class="card key-dates-card" aria-labelledby="h-kd">
+      <h2 id="h-kd" class="card-title">📅 Key Dates</h2>
+      <div class="dates-grid">
+        <div class="date-item"><span class="date-label">Registration Deadline</span><span class="date-value">{{ election.registration_deadline }}</span></div>
+        <div class="date-item"><span class="date-label">Early Voting</span><span class="date-value">{{ election.early_voting }}</span></div>
+        <div class="date-item date-item--highlight"><span class="date-label">Election Day</span><span class="date-value">{{ election.election_day_display }}</span></div>
+      </div>
+    </section>
+    {% endif %}
+    <section class="card" aria-labelledby="h-us">
+      <h2 id="h-us" class="card-title">The 4 Stages of a US Election</h2>
+      <ol class="timeline" role="list" style="margin-top:.75rem">
+        <li class="timeline-item"><div class="timeline-marker">1</div>
+          <div class="timeline-content"><h3 class="timeline-step-title">Registration</h3>
+            <p>Register before your state's deadline at <a href="https://vote.gov" target="_blank" rel="noopener noreferrer">vote.gov</a>.</p>
+            <ul class="timeline-details"><li>Online, by mail, or in person</li><li>Update if you've moved</li></ul>
+          </div>
+        </li>
+        <li class="timeline-item"><div class="timeline-marker">2</div>
+          <div class="timeline-content"><h3 class="timeline-step-title">Verification</h3>
+            <p>Confirm registration at <a href="https://vote.org/am-i-registered-to-vote/" target="_blank" rel="noopener noreferrer">vote.org</a> and find your polling place.</p>
+          </div>
+        </li>
+        <li class="timeline-item"><div class="timeline-marker">3</div>
+          <div class="timeline-content"><h3 class="timeline-step-title">Voting Day</h3>
+            <p>Polls typically open 6 AM – 8 PM. Bring a valid photo ID.</p>
+            <ul class="timeline-details"><li>If in line at closing — you can still vote</li><li>Absentee/early voting available in most states</li></ul>
+          </div>
+        </li>
+        <li class="timeline-item"><div class="timeline-marker timeline-marker--last">4</div>
+          <div class="timeline-content"><h3 class="timeline-step-title">Results</h3>
+            <p>Results are announced election night; final certification takes days to weeks.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+    {% if election and election.polling_locations %}
+    <section class="card" aria-labelledby="h-pl">
+      <h2 id="h-pl" class="card-title">📍 Sample Polling Locations</h2>
+      <div class="locations-grid">
+        {% for loc in election.polling_locations %}
+        <div class="location-card"><h3 class="location-name">{{ loc.name }}</h3><p class="location-address">📍 {{ loc.address }}</p><p class="location-hours">🕐 {{ loc.hours }}</p></div>
+        {% endfor %}
+      </div>
+      {% if election.source=='mock_data' %}<p class="data-notice">ℹ️ {{ election.note }}</p>{% endif %}
+    </section>
+    {% endif %}
+
+    {# ── UK ── #}
+    {% elif country=='uk' and election %}
+    <section class="card key-dates-card" aria-labelledby="h-uk">
+      <h2 id="h-uk" class="card-title">📅 UK Election Overview</h2>
+      <div class="dates-grid">
+        <div class="date-item"><span class="date-label">Election Day</span><span class="date-value">{{ election.election_day }}</span></div>
+        <div class="date-item"><span class="date-label">Total Seats</span><span class="date-value">{{ election.total_seats }}</span></div>
+        <div class="date-item date-item--highlight"><span class="date-label">Voting System</span><span class="date-value">{{ election.voting_system }}</span></div>
+        <div class="date-item"><span class="date-label">Next Election</span><span class="date-value">{{ election.next_election.expected_year }}</span></div>
+      </div>
+    </section>
+    <section class="card" aria-labelledby="h-uk2">
+      <h2 id="h-uk2" class="card-title">How to Vote in the UK</h2>
+      <div class="world-step"><h3>1. Register</h3><p>Register at <a href="https://www.gov.uk/register-to-vote" target="_blank" rel="noopener noreferrer">gov.uk/register-to-vote</a> at least 12 working days before election.</p><ul><li>Must be 18+ on election day</li><li>UK, Irish, or qualifying Commonwealth citizen</li></ul></div>
+      <div class="world-step"><h3>2. Photo ID</h3><p>Since 2023, you must bring photo ID to vote (passport, driving licence, etc.).</p><ul><li>Check accepted IDs at <a href="https://www.electoralcommission.org.uk" target="_blank" rel="noopener noreferrer">electoralcommission.org.uk</a></li></ul></div>
+      <div class="world-step"><h3>3. Voting Day</h3><p>Polls open 7 AM – 10 PM. Mark an X next to your chosen candidate.</p><ul><li>First Past The Post system — highest vote-count wins</li></ul></div>
+      <div class="world-step"><h3>4. Results</h3><p>Counting starts after polls close. Results typically by early next morning.</p><ul><li><a href="https://www.electoralcommission.org.uk" target="_blank" rel="noopener noreferrer">electoralcommission.org.uk</a></li></ul></div>
+    </section>
+    <section class="card tl-info-card" aria-labelledby="h-uk3">
+      <h2 id="h-uk3" class="card-title">🔗 Official Links</h2>
+      <div class="locations-grid">
+        <div class="location-card"><strong>Register</strong><br/><a href="https://www.gov.uk/register-to-vote" target="_blank" rel="noopener noreferrer">gov.uk/register-to-vote</a></div>
+        <div class="location-card"><strong>Find Polling Station</strong><br/><a href="https://www.gov.uk/find-polling-station" target="_blank" rel="noopener noreferrer">gov.uk/find-polling-station</a></div>
+        <div class="location-card"><strong>Electoral Commission</strong><br/><a href="https://www.electoralcommission.org.uk" target="_blank" rel="noopener noreferrer">electoralcommission.org.uk</a></div>
+      </div>
+      <p class="data-notice">ℹ️ {{ election.get('note','') }}</p>
+    </section>
+
+    {# ── AUSTRALIA ── #}
+    {% elif country=='australia' and election %}
+    <section class="card key-dates-card" aria-labelledby="h-au">
+      <h2 id="h-au" class="card-title">📅 Australia Election Overview</h2>
+      <div class="dates-grid">
+        <div class="date-item"><span class="date-label">Election Day</span><span class="date-value">{{ election.election_day }}</span></div>
+        <div class="date-item"><span class="date-label">Total Seats</span><span class="date-value">{{ election.total_seats }}</span></div>
+        <div class="date-item date-item--highlight"><span class="date-label">Voting System</span><span class="date-value">Preferential</span></div>
+        <div class="date-item"><span class="date-label">⚠️ Compulsory</span><span class="date-value">Yes — AUD $20 fine</span></div>
+      </div>
+    </section>
+    <section class="card" aria-labelledby="h-au2">
+      <h2 id="h-au2" class="card-title">How to Vote in Australia</h2>
+      <div class="world-step"><h3>1. Enrol</h3><p>Enrol at <a href="https://www.aec.gov.au/Enrolment/" target="_blank" rel="noopener noreferrer">aec.gov.au/Enrolment</a>. Automatic for citizens 18+.</p><ul><li>Must be Australian citizen</li><li>Voting is <strong>compulsory</strong> — fines apply</li></ul></div>
+      <div class="world-step"><h3>2. No Photo ID Needed</h3><p>Your name and address confirm your enrolment at the polling place.</p></div>
+      <div class="world-step"><h3>3. Voting Day</h3><p>Polls open 8 AM – 6 PM. Number ALL candidates in order of preference.</p><ul><li>Preferential voting — rank candidates 1, 2, 3…</li><li>Postal and early voting available</li></ul></div>
+      <div class="world-step"><h3>4. Results</h3><p>Preference counting takes time — final result may take days.</p><ul><li><a href="https://www.aec.gov.au" target="_blank" rel="noopener noreferrer">aec.gov.au</a></li></ul></div>
+    </section>
+    <section class="card tl-info-card" aria-labelledby="h-au3">
+      <h2 id="h-au3" class="card-title">🔗 Official Links</h2>
+      <div class="locations-grid">
+        <div class="location-card"><strong>Enrol</strong><br/><a href="https://www.aec.gov.au/Enrolment/" target="_blank" rel="noopener noreferrer">aec.gov.au/Enrolment</a></div>
+        <div class="location-card"><strong>Find Polling Place</strong><br/><a href="https://www.aec.gov.au" target="_blank" rel="noopener noreferrer">aec.gov.au</a></div>
+      </div>
+      <p class="data-notice">ℹ️ {{ election.get('note','') }}</p>
+    </section>
+
+    {# ── CANADA ── #}
+    {% elif country=='canada' and election %}
+    <section class="card key-dates-card" aria-labelledby="h-ca">
+      <h2 id="h-ca" class="card-title">📅 Canada Election Overview</h2>
+      <div class="dates-grid">
+        <div class="date-item"><span class="date-label">Election Day</span><span class="date-value">{{ election.election_day }}</span></div>
+        <div class="date-item"><span class="date-label">Total Seats</span><span class="date-value">{{ election.total_seats }}</span></div>
+        <div class="date-item date-item--highlight"><span class="date-label">Voting System</span><span class="date-value">{{ election.voting_system }}</span></div>
+        <div class="date-item"><span class="date-label">Next Election</span><span class="date-value">{{ election.next_election.expected_year }}</span></div>
+      </div>
+    </section>
+    <section class="card" aria-labelledby="h-ca2">
+      <h2 id="h-ca2" class="card-title">How to Vote in Canada</h2>
+      <div class="world-step"><h3>1. Register</h3><p>Register at <a href="https://ereg.elections.ca" target="_blank" rel="noopener noreferrer">ereg.elections.ca</a> or on election day at your polling station.</p><ul><li>Must be 18+ Canadian citizen</li></ul></div>
+      <div class="world-step"><h3>2. ID</h3><p>Bring one piece of ID with name and address, OR two pieces with name.</p></div>
+      <div class="world-step"><h3>3. Voting Day</h3><p>Polls open 9:30 AM – 9:30 PM local time. Mark an X next to your chosen candidate.</p><ul><li>First Past The Post system</li><li>Advanced polls open 4 days before election day</li></ul></div>
+      <div class="world-step"><h3>4. Results</h3><p>Results are announced election night as polls close across time zones.</p><ul><li><a href="https://www.elections.ca" target="_blank" rel="noopener noreferrer">elections.ca</a></li></ul></div>
+    </section>
+    <section class="card tl-info-card" aria-labelledby="h-ca3">
+      <h2 id="h-ca3" class="card-title">🔗 Official Links</h2>
+      <div class="locations-grid">
+        <div class="location-card"><strong>Register</strong><br/><a href="https://ereg.elections.ca" target="_blank" rel="noopener noreferrer">ereg.elections.ca</a></div>
+        <div class="location-card"><strong>Elections Canada</strong><br/><a href="https://www.elections.ca" target="_blank" rel="noopener noreferrer">elections.ca</a></div>
+      </div>
+      <p class="data-notice">ℹ️ {{ election.get('note','') }}</p>
+    </section>
+    {% endif %}
+
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <p>ElectionGuide — Non-partisan civic education.
+      India: <a href="https://www.eci.gov.in" target="_blank" rel="noopener noreferrer">eci.gov.in</a> ·
+      US: <a href="https://vote.gov" target="_blank" rel="noopener noreferrer">vote.gov</a>
+    </p>
+    <p class="footer-services">Powered by: Google Civic API · Google Translate</p>
+    <p class="footer-services" style="margin-top: 5px; font-weight: 500;">Built for the Hack2Skill & Google for Developers AI Challenge 2026.</p>
+  </footer>
+
+  <script src="//translate.google.com/translate_a/element.js?cb=gteInit" defer></script>
+  <script>
+    function gteInit() {
+      new google.translate.TranslateElement({ pageLanguage: 'en' }, 'gte');
+    }
+    function tlLang(lang) {
+      if (!lang) return;
+      var s = document.querySelector('.goog-te-combo');
+      if (s) { s.value = lang; s.dispatchEvent(new Event('change')); }
+      else { window.location.href = 'https://translate.google.com/translate?hl=' + lang + '&u=' + encodeURIComponent(location.href); }
+    }
+  </script>
+</body>
+</html>

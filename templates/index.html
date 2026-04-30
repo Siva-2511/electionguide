@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <meta name="description" content="ElectionGuide - AI election assistant for India, US, UK, Australia and Canada. Voter eligibility, registration and voting steps." />
+  <meta name="theme-color" content="#ff6f00" />
+  <title>ElectionGuide – Smart Election Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body class="country-india">
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ── Navbar ── -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="nav-brand">
+      <span class="nav-logo" aria-hidden="true">🗳️</span>
+      <span class="nav-title">ElectionGuide</span>
+    </div>
+
+    <!-- Hamburger (mobile) -->
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="nav-mobile-menu">
+      <span></span><span></span><span></span>
+    </button>
+
+    <div class="nav-right" id="nav-right">
+      <!-- Country Tabs -->
+      <div class="country-tabs" role="tablist" aria-label="Select country">
+        <button class="ctab active" id="ctab-india" data-country="india" role="tab" aria-selected="true">🇮🇳 India</button>
+        <button class="ctab" id="ctab-us" data-country="us" role="tab" aria-selected="false">🇺🇸 US</button>
+        <button class="ctab" id="ctab-uk" data-country="uk" role="tab" aria-selected="false">🇬🇧 UK</button>
+        <button class="ctab" id="ctab-australia" data-country="australia" role="tab" aria-selected="false">🇦🇺 AUS</button>
+        <button class="ctab" id="ctab-canada" data-country="canada" role="tab" aria-selected="false">🇨🇦 CAN</button>
+      </div>
+
+      <!-- Custom Language Selector (uses Google Translate behind the scenes) -->
+      <div class="translate-pill">
+        <label for="lang-select" class="sr-only">Select language</label>
+        <select id="lang-select" class="lang-select" aria-label="Select language">
+          <option value="">🌐 Language</option>
+          <optgroup label="Indian Languages">
+            <option value="ta">தமிழ் Tamil</option>
+            <option value="hi">हिन्दी Hindi</option>
+            <option value="te">తెలుగు Telugu</option>
+            <option value="kn">ಕನ್ನಡ Kannada</option>
+            <option value="ml">മലയാളം Malayalam</option>
+            <option value="bn">বাংলা Bengali</option>
+            <option value="gu">ગુજરાતી Gujarati</option>
+            <option value="mr">मराठी Marathi</option>
+            <option value="pa">ਪੰਜਾਬੀ Punjabi</option>
+            <option value="ur">اردو Urdu</option>
+          </optgroup>
+          <optgroup label="International">
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+            <option value="ar">العربية</option>
+            <option value="zh-CN">中文</option>
+            <option value="de">Deutsch</option>
+            <option value="ja">日本語</option>
+            <option value="pt">Português</option>
+            <option value="ru">Русский</option>
+            <option value="ko">한국어</option>
+          </optgroup>
+        </select>
+      </div>
+      <!-- Hidden Google Translate element (provides the translation engine) -->
+      <div id="google_translate_element" style="display:none;" aria-hidden="true"></div>
+
+      <a href="/timeline?country=india" class="nav-link" id="nav-timeline">Timeline</a>
+
+      {% if user %}
+        <div class="user-badge">
+          <img src="{{ user.picture }}" alt="{{ user.name }}" class="user-avatar" width="30" height="30" />
+          <span class="user-name">{{ user.name }}</span>
+          <a href="/logout" class="btn btn-outline btn-sm" id="btn-logout">Logout</a>
+        </div>
+      {% else %}
+        <a href="/login" class="btn btn-primary btn-sm" id="btn-login">🔐 Sign in</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <!-- Mobile nav overlay -->
+  <div class="nav-mobile-menu hidden" id="nav-mobile-menu" role="menu">
+    <div class="mobile-country-grid">
+      <button class="ctab active" data-country="india" data-mobile="true">🇮🇳 India</button>
+      <button class="ctab" data-country="us" data-mobile="true">🇺🇸 US</button>
+      <button class="ctab" data-country="uk" data-mobile="true">🇬🇧 UK</button>
+      <button class="ctab" data-country="australia" data-mobile="true">🇦🇺 Australia</button>
+      <button class="ctab" data-country="canada" data-mobile="true">🇨🇦 Canada</button>
+    </div>
+  <!-- Hidden mobile translate container -->
+  <div id="google_translate_element_mobile" style="display:none;" aria-hidden="true"></div>
+  </div>
+
+  <!-- ── Country Banner ── -->
+  <div class="country-banner" id="country-banner" role="status" aria-live="polite">
+    <div class="banner-inner">
+      <span class="banner-flag" id="banner-flag" aria-hidden="true">🇮🇳</span>
+      <div class="banner-text">
+        <strong id="banner-title">India Elections · தமிழ் தேர்தல் · भारत चुनाव</strong>
+        <p id="banner-subtitle" class="banner-sub">Election Commission of India (ECI) · eci.gov.in · Non-partisan guide</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main Layout ── -->
+  <main id="main-content" class="main-layout">
+
+    <!-- Left Panel -->
+    <aside class="side-panel" aria-label="Tools panel">
+
+      <!-- Eligibility Checker -->
+      <section class="card" aria-labelledby="eligibility-heading">
+        <h2 id="eligibility-heading" class="card-title">✅ Eligibility Checker</h2>
+        <p class="card-desc" id="elig-desc">Enter your age to check if you can vote in India.</p>
+        <form id="eligibility-form" novalidate>
+          <div class="form-group">
+            <label for="age-input" class="form-label">Your Age</label>
+            <input type="number" id="age-input" min="0" max="120" placeholder="e.g. 21"
+              class="form-input" aria-required="true" aria-describedby="age-hint" />
+            <small id="age-hint" class="form-hint">Enter a number 0–120</small>
+          </div>
+          <div class="form-group" id="citizen-group">
+            <label class="form-label">Citizenship status</label>
+            <div class="radio-group" role="radiogroup">
+              <label class="radio-label"><input type="radio" name="citizen" value="yes" checked id="citizen-yes" /> Yes</label>
+              <label class="radio-label"><input type="radio" name="citizen" value="no" id="citizen-no" /> No</label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full" id="btn-check-eligibility">✅ Check Eligibility</button>
+        </form>
+        <div id="eligibility-result" class="result-box hidden" role="alert" aria-live="polite"></div>
+      </section>
+
+      <!-- Voter Checklist -->
+      <section class="card" aria-labelledby="checklist-heading">
+        <h2 id="checklist-heading" class="card-title">📋 Voter Checklist</h2>
+        <div class="form-group">
+          <label for="voter-status" class="form-label">Registration status:</label>
+          <select id="voter-status" class="form-input">
+            <option value="unregistered">Not registered yet</option>
+            <option value="registered">Already registered</option>
+            <option value="returning">Returning voter</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary btn-full" id="btn-get-checklist">📋 Get My Checklist</button>
+        <div id="checklist-result" class="checklist-container hidden" aria-live="polite"></div>
+      </section>
+
+      <!-- Calendar Reminder -->
+      <section class="card" aria-labelledby="reminder-heading">
+        <h2 id="reminder-heading" class="card-title">📅 Election Reminder</h2>
+        <p class="card-desc">Add Election Day to Google Calendar.</p>
+        <button class="btn btn-accent btn-full" id="btn-add-reminder">📅 Add to Google Calendar</button>
+        <div id="reminder-result" class="result-box hidden" role="alert" aria-live="polite"></div>
+      </section>
+
+      <!-- Stats Chart -->
+      <section class="card" aria-labelledby="chart-heading">
+        <h2 id="chart-heading" class="card-title">📊 Voter Turnout</h2>
+        <div id="voter-chart" style="width:100%;height:180px;" role="img" aria-label="Voter turnout comparison chart"></div>
+      </section>
+
+    </aside>
+
+    <!-- Chat Panel -->
+    <section class="chat-panel" aria-labelledby="chat-heading" id="chat-panel">
+      <div class="chat-header">
+        <div class="chat-header-top">
+          <h1 id="chat-heading" class="chat-title">🗳️ ElectionGuide Assistant</h1>
+          <a href="/timeline?country=india" class="btn btn-sm btn-outline-white" id="btn-view-timeline">📅 Timeline</a>
+        </div>
+        <p class="chat-subtitle" id="chat-subtitle">வணக்கம்! Namaste! 🙏 Helping you navigate Indian elections.</p>
+        <div class="chat-status-bar">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-text">AI Online · Non-partisan · Powered by Google Gemini</span>
+        </div>
+      </div>
+
+      <div id="chat-messages" class="chat-messages" role="log" aria-label="Chat conversation" aria-live="polite" aria-atomic="false">
+        <!-- Welcome message injected by JS -->
+      </div>
+
+      <div class="address-bar" id="address-bar-container">
+        <label for="address-input" class="sr-only">Your address or state for local election info</label>
+        <input type="text" id="address-input" class="form-input"
+          placeholder="📍 Enter your state / address for local info (optional)"
+          aria-label="Address or state for local election info" maxlength="200" />
+      </div>
+
+      <form id="chat-form" class="chat-input-area" novalidate>
+        <label for="chat-input" class="sr-only">Type your election question</label>
+        <input type="text" id="chat-input" class="chat-input"
+          placeholder="Ask about voting, registration, eligibility..."
+          aria-label="Your election question" maxlength="500" autocomplete="off" />
+        <button type="submit" class="btn btn-primary btn-send" id="btn-send" aria-label="Send message">
+          <span class="send-text">Send</span><span aria-hidden="true"> →</span>
+        </button>
+      </form>
+    </section>
+
+  </main>
+
+  <!-- Country Quick Facts Panel -->
+  <div id="india-info-panel" class="info-panel" aria-label="Country election quick facts" role="complementary">
+    <div class="info-panel-inner">
+      <h3 class="info-panel-title" id="facts-title">🇮🇳 India · தமிழ் தேர்தல் · भारत चुनाव — Quick Facts</h3>
+      <div class="facts-grid" id="facts-grid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer" role="contentinfo">
+    <p>ElectionGuide — Non-partisan civic education.
+      India: <a href="https://www.eci.gov.in" target="_blank" rel="noopener noreferrer">eci.gov.in</a> ·
+      US: <a href="https://vote.gov" target="_blank" rel="noopener noreferrer">vote.gov</a>
+    </p>
+    <p class="footer-services">Powered by: Google Gemini · Google Civic API · Google OAuth · Google Calendar · Google Translate · Google Charts</p>
+    <p class="footer-services" style="margin-top: 5px; font-weight: 500;">Built for the Hack2Skill & Google for Developers AI Challenge 2026.</p>
+  </footer>
+
+  <script src="/static/js/chat.js"></script>
+  <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
+
+  <script>
+    // Google Translate engine init (hidden widget)
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement(
+        { pageLanguage: 'en' },
+        'google_translate_element'
+      );
+    }
+
+    // Custom language select — triggers Google Translate
+    function applyLanguage(lang) {
+      if (!lang) return;
+      var sel = document.querySelector('.goog-te-combo');
+      if (sel) {
+        sel.value = lang;
+        sel.dispatchEvent(new Event('change'));
+      } else {
+        // Fallback: use Google Translate URL redirect
+        window.location.href = 'https://translate.google.com/translate?hl=' + lang + '&u=' + encodeURIComponent(window.location.href);
+      }
+    }
+
+    var langSelect = document.getElementById('lang-select');
+    if (langSelect) {
+      langSelect.addEventListener('change', function() {
+        applyLanguage(this.value);
+      });
+    }
+
+    // Hamburger menu
+    var hamburger = document.getElementById('nav-hamburger');
+    var mobileMenu = document.getElementById('nav-mobile-menu');
+    if (hamburger && mobileMenu) {
+      hamburger.addEventListener('click', function() {
+        var isOpen = !mobileMenu.classList.contains('hidden');
+        mobileMenu.classList.toggle('hidden', isOpen);
+        hamburger.setAttribute('aria-expanded', (!isOpen).toString());
+      });
+    }
+  </script>
+
+  <script>
+    google.charts.load('current', { packages: ['corechart'] });
+    google.charts.setOnLoadCallback(function() { window.drawCountryChart('india'); });
+
+    var CHART_DATA = {
+      india: {
+        title: 'Tamil Nadu 2026 — 10 Major Parties (contested seats)',
+        rows: [
+          ['DMK', 133, '#e53935', 'DMK'], ['AIADMK', 66, '#1565c0', 'AIADMK'],
+          ['INC', 18, '#6a1b9a', 'INC'], ['BJP', 12, '#ff6f00', 'BJP'],
+          ['VCK', 6, '#2e7d32', 'VCK'], ['PMK', 5, '#f57f17', 'PMK'],
+          ['TVK', 4, '#00838f', 'TVK'], ['Others', 8, '#5f6368', 'Others'],
+        ]
+      },
+      us: {
+        title: 'US Voter Turnout 2018\u20132026 (%)',
+        rows: [
+          ['2018', 49.3, '#4285f4', '49.3%'], ['2020', 66.8, '#0d47a1', '66.8%'],
+          ['2022', 46.8, '#1a73e8', '46.8%'], ['2024', 63.1, '#1557b0', '63.1%'],
+          ['2026\u2605', 51.0, '#90caf9', '~51%'],
+        ]
+      },
+      uk: {
+        title: 'UK Elections Turnout 2017\u20132024 (%)',
+        rows: [
+          ['2017', 68.7, '#9c27b0', '68.7%'], ['2019', 67.3, '#7b1fa2', '67.3%'],
+          ['2024', 59.7, '#6a1b9a', '59.7%'], ['2029\u2605', 62.0, '#ce93d8', '~62%'],
+        ]
+      },
+      australia: {
+        title: 'Australia Turnout 2019\u20132025 (%) — Compulsory',
+        rows: [
+          ['2019', 91.9, '#2e7d32', '91.9%'], ['2022', 90.3, '#1b5e20', '90.3%'],
+          ['2025', 91.0, '#2e7d32', '~91%'], ['2028★', 91.0, '#a5d6a7', '~91%'],
+        ]
+      },
+      canada: {
+        title: 'Canada Federal Turnout 2019\u20132025 (%)',
+        rows: [
+          ['2019', 65.9, '#c62828', '65.9%'], ['2021', 62.6, '#b71c1c', '62.6%'],
+          ['2025', 68.3, '#c62828', '68.3%'], ['2029★', 66.0, '#ef9a9a', '~66%'],
+        ]
+      }
+    };
+
+    window.drawCountryChart = function(country) {
+      var cd = CHART_DATA[country] || CHART_DATA['india'];
+      var rows = [['Label', 'Value', { role: 'style' }, { role: 'annotation' }]].concat(cd.rows);
+      var data = google.visualization.arrayToDataTable(rows);
+      var options = {
+        title: cd.title, backgroundColor: 'transparent', legend: { position: 'none' },
+        hAxis: { textStyle: { color: '#5f6368', fontSize: 10 } },
+        vAxis: { textStyle: { color: '#5f6368' }, minValue: 0 },
+        chartArea: { width: '78%', height: '58%' },
+        annotations: { alwaysOutside: false, textStyle: { fontSize: 9, bold: true, color: '#fff' } },
+        animation: { startup: true, duration: 700, easing: 'out' }
+      };
+      new google.visualization.ColumnChart(document.getElementById('voter-chart')).draw(data, options);
+    };
+  </script>
+</body>
+</html>
