@@ -33,6 +33,15 @@ app = Flask(__name__)
 # Fix for Google Cloud Run: Ensure url_for generates https:// URLs behind the proxy
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallback-dev-secret-key")
+
+# Ensure cookies work behind Cloud Run HTTPS proxy
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    PERMANENT_SESSION_LIFETIME=86400  # 1 day
+)
+
 CORS(app)
 
 # Production-safe logging
