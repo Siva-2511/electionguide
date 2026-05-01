@@ -209,7 +209,11 @@ def login():
                 "https://www.googleapis.com/auth/calendar.events"
             ]
         )
-        flow.redirect_uri = url_for("oauth_callback", _external=True)
+        redirect_uri = url_for("oauth_callback", _external=True)
+        if redirect_uri.startswith("http://") and "localhost" not in redirect_uri and "127.0.0.1" not in redirect_uri:
+            redirect_uri = redirect_uri.replace("http://", "https://", 1)
+            
+        flow.redirect_uri = redirect_uri
         auth_url, state = flow.authorization_url(access_type="offline", include_granted_scopes="true")
         session["oauth_state"] = state
         return redirect(auth_url)
@@ -250,7 +254,11 @@ def oauth_callback():
             ],
             state=session.get("oauth_state")
         )
-        flow.redirect_uri = url_for("oauth_callback", _external=True)
+        redirect_uri = url_for("oauth_callback", _external=True)
+        if redirect_uri.startswith("http://") and "localhost" not in redirect_uri and "127.0.0.1" not in redirect_uri:
+            redirect_uri = redirect_uri.replace("http://", "https://", 1)
+            
+        flow.redirect_uri = redirect_uri
         
         # Cloud Run proxy fix: Force request.url to https:// so oauthlib doesn't crash with redirect_uri_mismatch
         auth_response_url = request.url
