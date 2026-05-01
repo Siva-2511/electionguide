@@ -251,7 +251,13 @@ def oauth_callback():
             state=session.get("oauth_state")
         )
         flow.redirect_uri = url_for("oauth_callback", _external=True)
-        flow.fetch_token(authorization_response=request.url)
+        
+        # Cloud Run proxy fix: Force request.url to https:// so oauthlib doesn't crash with redirect_uri_mismatch
+        auth_response_url = request.url
+        if auth_response_url.startswith("http://"):
+            auth_response_url = auth_response_url.replace("http://", "https://", 1)
+            
+        flow.fetch_token(authorization_response=auth_response_url)
         credentials = flow.credentials
         service = build_service("oauth2", "v2", credentials=credentials)
         user_info = service.userinfo().get().execute()
