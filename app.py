@@ -18,6 +18,7 @@ from flask import (Flask, request, jsonify, render_template,
                    session, redirect, url_for, send_from_directory)
 from flask_cors import CORS
 from dotenv import load_dotenv
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 import orchestrator
 from services.civic_api import get_election_info
@@ -29,6 +30,8 @@ load_dotenv()
 
 # ─── App Setup ────────────────────────────────────────────────────────────
 app = Flask(__name__)
+# Fix for Google Cloud Run: Ensure url_for generates https:// URLs behind the proxy
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallback-dev-secret-key")
 CORS(app)
 
