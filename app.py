@@ -261,7 +261,9 @@ def oauth_callback():
             "picture": user_info.get("picture", "")
         }
     except Exception as e:
-        logger.warning("OAuth callback failed: %s", type(e).__name__)
+        logger.error("OAuth callback failed with error: %s", str(e))
+        import traceback
+        traceback.print_exc()
 
     return redirect(url_for("index"))
 
