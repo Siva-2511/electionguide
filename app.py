@@ -251,13 +251,6 @@ def oauth_callback():
             "email": user_info.get("email", ""),
             "picture": user_info.get("picture", "")
         }
-        session["credentials"] = {
-            "token": credentials.token,
-            "refresh_token": credentials.refresh_token,
-            "token_uri": credentials.token_uri,
-            "client_id": credentials.client_id,
-            "client_secret": credentials.client_secret,
-        }
     except Exception as e:
         logger.warning("OAuth callback failed: %s", type(e).__name__)
 
