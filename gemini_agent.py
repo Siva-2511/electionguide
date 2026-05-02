@@ -172,12 +172,12 @@ def _try_model(name: str, prompt: str):
         return None, None
 
 
-# Model names to try in order (waterfall fallback)
+# Model names to try in order (stable legacy first)
 _MODEL_CANDIDATES = [
+    "gemini-pro",
     "gemini-1.5-pro",
     "gemini-1.5-flash",
     "gemini-2.0-flash",
-    "gemini-pro",
 ]
 
 
@@ -290,7 +290,7 @@ def chat(message: str, context: dict = None, country: str = 'us') -> dict:
                 hit_quota = True
                 continue
             elif any(k in error_text for k in ('404', 'not found', 'not supported')):
-                logger.debug("Model %s unavailable, trying next", model_name)
+                logger.warning("Model %s unavailable/not-supported, trying next", model_name)
                 continue
             else:
                 logger.error("Unretriable error %s: %s", model_name, error_text[:100])
