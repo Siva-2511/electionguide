@@ -6,6 +6,9 @@
 [![CI Pipeline](https://github.com/Siva-2511/electionguide/actions/workflows/ci.yml/badge.svg)](https://github.com/Siva-2511/electionguide/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-94%25-success)](#-testing)
 [![License](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Cloud_Run-9cf)](https://electionguide-app-1033116720582.us-central1.run.app)
+
+**🌐 Live Application:** [electionguide-app.run.app](https://electionguide-app-1033116720582.us-central1.run.app)
 
 > A non-partisan, AI-powered multi-country civic education assistant that guides users through the election processes in India, the US, UK, Australia, and Canada — from eligibility to casting their vote.
 
