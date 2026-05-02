@@ -290,7 +290,6 @@ def oauth_callback():
         logger.error("OAuth callback failed with error: %s", str(e))
         import traceback
         traceback.print_exc()
-        return f"OAUTH ERROR: {str(e)} <br> Request URL: {request.url} <br> Redirect URI: {redirect_uri}", 400
 
     return redirect(url_for("index"))
 
