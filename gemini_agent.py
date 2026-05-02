@@ -172,12 +172,18 @@ def _try_model(name: str, prompt: str):
         return None, None
 
 
-# Model names to try in order (stable legacy first)
+# Model names to try in order (high-availability first)
 _MODEL_CANDIDATES = [
+    "gemini-1.5-flash-8b",
+    "models/gemini-1.5-flash-8b",
+    "gemini-1.5-flash",
     "models/gemini-1.5-flash",
+    "gemini-1.5-flash-latest",
+    "models/gemini-1.5-flash-latest",
+    "gemini-1.5-pro",
     "models/gemini-1.5-pro",
+    "gemini-2.0-flash",
     "models/gemini-2.0-flash",
-    "models/gemini-pro",
 ]
 
 
