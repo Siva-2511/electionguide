@@ -13,17 +13,17 @@ class TestEligibilityIsolation:
     """eligibility.py must NEVER call Gemini or make network requests."""
 
     def test_eligibility_never_calls_gemini(self):
-        with patch("gemini_agent.chat") as mock_chat:
+        with patch("gemini_logic.chat") as mock_chat:
             eligibility.check(18)
             mock_chat.assert_not_called()
 
     def test_eligibility_never_calls_gemini_on_invalid(self):
-        with patch("gemini_agent.chat") as mock_chat:
+        with patch("gemini_logic.chat") as mock_chat:
             eligibility.check("invalid")
             mock_chat.assert_not_called()
 
     def test_eligibility_never_calls_gemini_on_underage(self):
-        with patch("gemini_agent.chat") as mock_chat:
+        with patch("gemini_logic.chat") as mock_chat:
             eligibility.check(15)
             mock_chat.assert_not_called()
 
@@ -42,17 +42,17 @@ class TestChecklistIsolation:
     """checklist.py must NEVER call Gemini or make network requests."""
 
     def test_checklist_never_calls_gemini_unregistered(self):
-        with patch("gemini_agent.chat") as mock_chat:
+        with patch("gemini_logic.chat") as mock_chat:
             checklist.generate("unregistered")
             mock_chat.assert_not_called()
 
     def test_checklist_never_calls_gemini_registered(self):
-        with patch("gemini_agent.chat") as mock_chat:
+        with patch("gemini_logic.chat") as mock_chat:
             checklist.generate("registered")
             mock_chat.assert_not_called()
 
     def test_checklist_never_calls_gemini_returning(self):
-        with patch("gemini_agent.chat") as mock_chat:
+        with patch("gemini_logic.chat") as mock_chat:
             checklist.generate("returning")
             mock_chat.assert_not_called()
 

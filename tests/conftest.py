@@ -35,7 +35,7 @@ def oversized_payload():
 @pytest.fixture
 def mock_gemini_success():
     """Mock a successful Gemini API response."""
-    with patch("gemini_agent.genai") as mock_genai:
+    with patch("gemini_logic.genai") as mock_genai:
         mock_model = MagicMock()
         mock_response = MagicMock()
         mock_response.text = "To register to vote, visit vote.gov and fill out the registration form."
@@ -48,7 +48,7 @@ def mock_gemini_success():
 @pytest.fixture
 def mock_gemini_failure():
     """Mock a failing Gemini API (simulates network error or API crash)."""
-    with patch("gemini_agent.genai") as mock_genai:
+    with patch("gemini_logic.genai") as mock_genai:
         mock_model = MagicMock()
         mock_model.generate_content.side_effect = Exception("API unavailable")
         mock_genai.GenerativeModel.return_value = mock_model

@@ -44,10 +44,10 @@ _SYSTEM_PROMPTS = {
     "india": SYSTEM_PROMPT_INDIA, "us": SYSTEM_PROMPT_US,
 }
 
-# Stable model names for the proven SDK
+# Stable model names for the proven SDK (Removed 'models/' prefix to fix 404)
 _MODEL_CANDIDATES = [
-    "models/gemini-1.5-flash",
-    "models/gemini-1.5-pro",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro",
 ]
 
 _response_cache = {}  # Global in-memory cache
@@ -124,6 +124,8 @@ def detect_intent(message: str) -> dict:
 
 def filter_output(text: str) -> str:
     """Basic filter for biased content."""
+    if not text:
+        return ""
     forbidden = [r"\bvote for\b", r"\byou should vote for\b", r"\bbest choice\b"]
     for pattern in forbidden:
         if re.search(pattern, text, re.IGNORECASE):
@@ -132,7 +134,8 @@ def filter_output(text: str) -> str:
 
 def enforce_readability(text: str) -> str:
     """Bullet-point formatter for readability."""
-    if not text: return SAFE_FALLBACK
+    if not text:
+        return ""
     text = re.sub(r'[ \t]+', ' ', text.strip())
     sentences = re.split(r'(?<=[.!?])\s+', text)
     if len(sentences) > 5:
