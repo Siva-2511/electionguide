@@ -7,6 +7,10 @@ with sensible defaults.
 """
 import os
 from typing import Optional
+from dotenv import load_dotenv
+
+# Load environment variables from .env file before reading them
+load_dotenv()
 
 class Config:
     """Application configuration settings."""

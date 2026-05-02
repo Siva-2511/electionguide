@@ -28,8 +28,6 @@ from services.india_api import get_india_election_info
 from services.world_elections import get_world_election_info
 from utils.response import build_response
 
-load_dotenv()
-
 # ─── App Setup ────────────────────────────────────────────────────────────
 app = Flask(__name__)
 # Fix for Google Cloud Run: Ensure url_for generates https:// URLs behind the proxy
