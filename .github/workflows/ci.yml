@@ -21,7 +21,6 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest cachetools flask flask-cors python-dotenv google-generativeai google-auth-oauthlib google-api-python-client requests
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         
     - name: Run Pytest Test Suite
