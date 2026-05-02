@@ -162,18 +162,21 @@ def get_timeline(address: str = None) -> dict:
     return civic_api.get_election_info(address)
 
 
-def _add_calendar_reminder(election_day: str, election_name: str) -> dict:
+def _add_calendar_reminder(election_day: str, election_name: str, token: str = None) -> dict:
     """
     Add Election Day to Google Calendar via OAuth credentials.
     Uses google-api-python-client with OAuth flow.
-    This is FORCED inside the pipeline — not optional.
     """
+    if not token:
+        return build_response(success=False, error="Sign in first to add a reminder.")
+
     try:
         from google.oauth2.credentials import Credentials
         from googleapiclient.discovery import build as build_service
 
-        # In production: credentials come from OAuth session
-        # For demo: we return a structured response showing the integration works
+        creds = Credentials(token=token)
+        service = build_service('calendar', 'v3', credentials=creds)
+
         event_body = {
             "summary": f"🗳️ {election_name}",
             "description": "Remember to vote! Check your polling location at vote.gov",
@@ -188,10 +191,13 @@ def _add_calendar_reminder(election_day: str, election_name: str) -> dict:
             }
         }
 
-        logger.info("Calendar event prepared for %s", election_day)
+        # Actually insert the event into the user's primary calendar
+        event = service.events().insert(calendarId='primary', body=event_body).execute()
+        
+        logger.info("Calendar event created for %s: %s", election_day, event.get('htmlLink'))
         return build_response(
             success=True,
-            data={"event": event_body, "message": "Calendar reminder set!"}
+            data={"event": event_body, "link": event.get('htmlLink'), "message": "Calendar reminder set!"}
         )
 
     except Exception as e:

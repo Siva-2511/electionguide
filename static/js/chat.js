@@ -435,8 +435,14 @@ if (reminderBtn) {
         body: JSON.stringify({ election_day: state.electionDay, election_name: state.electionName }),
       });
       const data = await res.json();
-      if (data.success) { reminderResult.classList.add('success'); reminderResult.textContent = '✅ Reminder prepared! Sign in with Google to save to your calendar.'; }
-      else { reminderResult.classList.add('error'); reminderResult.textContent = data.error || 'Sign in first to add a reminder.'; }
+      if (data.success) { 
+        reminderResult.classList.add('success'); 
+        reminderResult.innerHTML = `✅ Reminder successfully added to your <a href="${data.data.link}" target="_blank" style="color:white; text-decoration:underline;">Google Calendar</a>!`; 
+      }
+      else { 
+        reminderResult.classList.add('error'); 
+        reminderResult.textContent = data.error || 'Sign in first to add a reminder.'; 
+      }
     } catch (_) { reminderResult.classList.add('error'); reminderResult.textContent = 'Could not add reminder.'; }
   });
 }

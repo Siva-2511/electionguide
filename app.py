@@ -160,7 +160,8 @@ def reminder():
         return jsonify(build_response(success=False, error="Invalid JSON payload.")), 400
     election_day = data.get("election_day", "2026-11-03")
     election_name = data.get("election_name", "Election Day")
-    result = orchestrator._add_calendar_reminder(election_day, election_name)
+    token = session.get("access_token")
+    result = orchestrator._add_calendar_reminder(election_day, election_name, token)
     return jsonify(result)
 
 
@@ -283,6 +284,8 @@ def oauth_callback():
             "email": user_info.get("email", ""),
             "picture": user_info.get("picture", "")
         }
+        # Save the access token for the Calendar API (small enough for cookie)
+        session["access_token"] = credentials.token
     except Exception as e:
         logger.error("OAuth callback failed with error: %s", str(e))
         import traceback
