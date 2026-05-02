@@ -127,9 +127,10 @@
           </div>
           <div class="form-group" id="citizen-group">
             <label class="form-label">Citizenship status</label>
-            <div class="radio-group" role="radiogroup">
-              <label class="radio-label"><input type="radio" name="citizen" value="yes" checked id="citizen-yes" /> Yes</label>
-              <label class="radio-label"><input type="radio" name="citizen" value="no" id="citizen-no" /> No</label>
+            <div class="radio-group" role="radiogroup" aria-labelledby="citizen-label">
+              <span id="citizen-label" class="sr-only">Citizenship status</span>
+              <label class="radio-label"><input type="radio" name="citizen" value="yes" checked id="citizen-yes" aria-label="Yes, I am a citizen" /> Yes</label>
+              <label class="radio-label"><input type="radio" name="citizen" value="no" id="citizen-no" aria-label="No, I am not a citizen" /> No</label>
             </div>
           </div>
           <button type="submit" class="btn btn-primary btn-full" id="btn-check-eligibility">✅ Check Eligibility</button>
@@ -142,7 +143,7 @@
         <h2 id="checklist-heading" class="card-title">📋 Voter Checklist</h2>
         <div class="form-group">
           <label for="voter-status" class="form-label">Registration status:</label>
-          <select id="voter-status" class="form-input">
+          <select id="voter-status" class="form-input" aria-label="Select your voter registration status">
             <option value="unregistered">Not registered yet</option>
             <option value="registered">Already registered</option>
             <option value="returning">Returning voter</option>

@@ -81,7 +81,7 @@ class TestCalendarIntegration:
         from orchestrator import _add_calendar_reminder
         from unittest.mock import patch, MagicMock
         
-        with patch("googleapiclient.discovery.build") as mock_build:
+        with patch("orchestrator.build_service") as mock_build:
             mock_service = MagicMock()
             mock_build.return_value = mock_service
             mock_service.events().insert().execute.return_value = {"htmlLink": "https://calendar.google.com/event"}
@@ -96,7 +96,11 @@ class TestCalendarIntegration:
 
     def test_calendar_returns_contract(self):
         from orchestrator import _add_calendar_reminder
-        result = _add_calendar_reminder("2026-11-03", "Test Election", token="dummy-token")
+        from unittest.mock import patch
+        
+        with patch("orchestrator.build_service"):
+            result = _add_calendar_reminder("2026-11-03", "Test Election", token="dummy-token")
+        
         assert "success" in result
         assert "data" in result
         assert "error" in result

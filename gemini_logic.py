@@ -14,6 +14,7 @@ import time
 import atexit
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
+from typing import Any, Dict, List, Optional
 
 from google import genai
 from google.genai import types
@@ -79,20 +80,30 @@ SYSTEM_PROMPTS = {
 # -----------------------
 # Cache (Thread-safe)
 # -----------------------
-_cache = OrderedDict()
+_cache: OrderedDict[str, Dict[str, Any]] = OrderedDict()
 _cache_lock = threading.Lock()
 
 # -----------------------
 # Client
 # -----------------------
-def _get_client():
+def _get_client() -> Optional[genai.Client]:
+    """Initialize and return the Gemini client if API key is present."""
     api_key = os.getenv("GEMINI_API_KEY")
     return genai.Client(api_key=api_key) if api_key else None
 
 # -----------------------
 # Discovery (Cached & Health-Aware)
 # -----------------------
-def _get_resilient_models(client):
+def _get_resilient_models(client: genai.Client) -> List[str]:
+    """
+    Discover available models, caching the results, and filtering out unhealthy ones.
+    
+    Args:
+        client (genai.Client): The initialized Gemini client.
+        
+    Returns:
+        List[str]: A list of healthy model names prioritized for fallback.
+    """
     global _model_list_cache
     now = time.time()
     
@@ -122,7 +133,8 @@ def _get_resilient_models(client):
 # -----------------------
 # Extraction & Filters
 # -----------------------
-def _extract_text(resp):
+def _extract_text(resp: Any) -> str:
+    """Safely extract text content from a Gemini response object."""
     try:
         if getattr(resp, "text", None):
             return resp.text
@@ -135,7 +147,17 @@ def _extract_text(resp):
         pass
     return ""
 
-def filter_output(text: str, country: str = "us"):
+def filter_output(text: str, country: str = "us") -> str:
+    """
+    Filter out unsafe or highly partisan phrasing from model outputs.
+    
+    Args:
+        text (str): The raw output from the AI.
+        country (str): The country context for appropriate fallback messages.
+        
+    Returns:
+        str: Cleaned text or a safe fallback string.
+    """
     if not text: return ""
     patterns = [
         r"\byou should vote for\b", r"\bbest candidate\b", r"\bbest choice\b",
@@ -148,7 +170,16 @@ def filter_output(text: str, country: str = "us"):
             return FALLBACKS.get(country, SAFE_FALLBACK)
     return text
 
-def enforce_readability(text: str):
+def enforce_readability(text: str) -> str:
+    """
+    Ensure the response is snappy and formatted as bullets if too long.
+    
+    Args:
+        text (str): The AI output text.
+        
+    Returns:
+        str: Formatted readable text.
+    """
     if not text: return ""
     text = re.sub(r"\s+", " ", text).strip()
     sentences = re.split(r"(?<=[.!?])\s+", text)
@@ -159,7 +190,10 @@ def enforce_readability(text: str):
 # -----------------------
 # SMART EXECUTION
 # -----------------------
-def _call_gemini_smart(client, model, prompt, system_instruction):
+def _call_gemini_smart(client: genai.Client, model: str, prompt: str, system_instruction: str) -> Any:
+    """
+    Execute a Gemini call with timeout and basic retry logic.
+    """
     def task():
         return client.models.generate_content(
             model=model,
@@ -193,7 +227,19 @@ def _call_gemini_smart(client, model, prompt, system_instruction):
 # -----------------------
 # MAIN CHAT
 # -----------------------
-def chat(message: str, context=None, country="us"):
+def chat(message: str, context: Optional[Dict[str, Any]] = None, country: str = "us") -> Dict[str, Any]:
+    """
+    Main orchestration point for intelligent chat handling.
+    Implements caching, resilient failovers, and safety filtering.
+    
+    Args:
+        message (str): The user's input message.
+        context (Optional[Dict[str, Any]]): Background data (e.g., election dates) for grounding.
+        country (str): The active country mode.
+        
+    Returns:
+        Dict[str, Any]: The finalized API response payload.
+    """
     global _consecutive_failures, _last_total_failure_time, _model_health
     start_time = time.time()
     raw = (message or "").strip()
@@ -262,7 +308,16 @@ def chat(message: str, context=None, country="us"):
 # -----------------------
 # INTENT DETECTION
 # -----------------------
-def detect_intent(message: str) -> dict:
+def detect_intent(message: str) -> Dict[str, Any]:
+    """
+    Fast, deterministic intent detection based on keywords.
+    
+    Args:
+        message (str): The raw user message.
+        
+    Returns:
+        Dict[str, Any]: The detected intent and confidence level.
+    """
     msg = (message or "").lower()
     if "register" in msg: return {"intent": "voter_registration", "confidence": "high"}
     if "how" in msg or "steps" in msg: return {"intent": "voter_checklist", "confidence": "medium"}

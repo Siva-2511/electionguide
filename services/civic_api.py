@@ -8,6 +8,7 @@ import os
 import time
 import logging
 import requests
+from typing import Dict, Any, Optional
 from cachetools import TTLCache
 from utils.response import build_response
 from utils.response_guard import enforce_schema
@@ -48,7 +49,7 @@ MOCK_CIVIC_DATA = {
 
 
 @enforce_schema
-def get_election_info(address: str = None) -> dict:
+def get_election_info(address: Optional[str] = None) -> Dict[str, Any]:
     """
     Fetch election information for a given address.
     Falls back to mock data gracefully if API is unavailable.
@@ -113,7 +114,7 @@ def get_election_info(address: str = None) -> dict:
         return build_response(success=True, data=MOCK_CIVIC_DATA)
 
 
-def _parse_civic_response(raw: dict) -> dict:
+def _parse_civic_response(raw: Dict[str, Any]) -> Dict[str, Any]:
     """Parse Google Civic API response into our standard structure."""
     election = raw.get("election", {})
     polling = raw.get("pollingLocations", [])

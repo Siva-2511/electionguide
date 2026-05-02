@@ -14,6 +14,10 @@ app.py calls ONLY this module — never individual services directly.
 """
 import os
 import logging
+from typing import Dict, Any, Optional
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build as build_service
+
 from utils.response import build_response
 from utils.validators import (
     sanitize_text,
@@ -88,12 +92,12 @@ def process_chat(data: dict) -> dict:
         return build_response(success=True, data={"reply": "Voter Checklist: 1. Ensure you're 18+. 2. Register on the electoral roll at voters.eci.gov.in. 3. Find your polling booth using the 'Voter Helpline' app. 4. Bring your EPIC card or a valid ID card on election day.", "source": "static_intent"})
 
     if intent == 'eligibility':
-        return build_response(success=True, data={"reply": "In India and the US, you are eligible to vote if you are a citizen of your country and are at least 18 years of age or older on the qualifying date.", "source": "static_intent"})
         age = validate_age(data.get("age", ""))
         if age is not None:
-            # India min age is also 18 — same deterministic check
             elig_result = eligibility.check(age, country=country)
             extra_data["eligibility"] = elig_result.get("data", {})
+        else:
+            return build_response(success=True, data={"reply": "In India and the US, you are eligible to vote if you are a citizen of your country and are at least 18 years of age or older on the qualifying date.", "source": "static_intent"})
 
     elif intent == "checklist":
         status = sanitize_text(data.get("status", "unregistered"))
@@ -136,10 +140,15 @@ def process_chat(data: dict) -> dict:
     )
 
 
-def check_eligibility(data: dict) -> dict:
+def check_eligibility(data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Eligibility route handler — pure deterministic, no AI.
-    Passes country so response text is country-specific.
+    Eligibility route handler — pure deterministic logic.
+    
+    Args:
+        data (Dict[str, Any]): JSON payload containing 'age' and 'country'.
+        
+    Returns:
+        Dict[str, Any]: Formatted API response.
     """
     age = validate_age(data.get("age", ""))
     if age is None:
@@ -154,34 +163,50 @@ def check_eligibility(data: dict) -> dict:
     return eligibility.check(age, citizen=citizen, country=country)
 
 
-def get_checklist(data: dict) -> dict:
+def get_checklist(data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Checklist route handler — pure deterministic, no AI.
+    Checklist route handler — pure deterministic logic.
+    
+    Args:
+        data (Dict[str, Any]): JSON payload containing 'status' and 'first_time'.
+        
+    Returns:
+        Dict[str, Any]: Formatted API response with the checklist.
     """
     status = sanitize_text(data.get("status", "unregistered"))
     first_time = data.get("first_time", False)
     return checklist.generate(status=status, first_time=first_time)
 
 
-def get_timeline(address: str = None) -> dict:
+def get_timeline(address: Optional[str] = None) -> Dict[str, Any]:
     """
     Timeline route handler — fetches civic data for timeline view.
+    
+    Args:
+        address (Optional[str]): Street address for location-specific data.
+        
+    Returns:
+        Dict[str, Any]: Formatted API response with civic data.
     """
     return civic_api.get_election_info(address)
 
 
-def _add_calendar_reminder(election_day: str, election_name: str, token: str = None) -> dict:
+def _add_calendar_reminder(election_day: str, election_name: str, token: Optional[str] = None) -> Dict[str, Any]:
     """
     Add Election Day to Google Calendar via OAuth credentials.
-    Uses google-api-python-client with OAuth flow.
+    
+    Args:
+        election_day (str): The date of the election (YYYY-MM-DD).
+        election_name (str): The name of the election event.
+        token (Optional[str]): The OAuth access token for the user.
+        
+    Returns:
+        Dict[str, Any]: Formatted API response indicating success or failure.
     """
     if not token:
         return build_response(success=False, error="Sign in first to add a reminder.")
 
     try:
-        from google.oauth2.credentials import Credentials
-        from googleapiclient.discovery import build as build_service
-
         creds = Credentials(token=token)
         service = build_service('calendar', 'v3', credentials=creds)
 

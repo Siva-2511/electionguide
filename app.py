@@ -15,12 +15,14 @@ from collections import defaultdict
 from functools import wraps
 
 from flask import (Flask, request, jsonify, render_template,
-                   session, redirect, url_for, send_from_directory)
+                   session, redirect, url_for, send_from_directory, Response)
 from flask_cors import CORS
-from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build as build_service
 
 import orchestrator
+from config import Config
 from services.civic_api import get_election_info
 from services.india_api import get_india_election_info
 from services.world_elections import get_world_election_info
@@ -32,7 +34,7 @@ load_dotenv()
 app = Flask(__name__)
 # Fix for Google Cloud Run: Ensure url_for generates https:// URLs behind the proxy
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "fallback-dev-secret-key")
+app.secret_key = Config.FLASK_SECRET_KEY
 
 # Let Flask handle cookies normally behind the proxy
 app.config.update(
@@ -43,7 +45,7 @@ app.config.update(
 CORS(app)
 
 # Production-safe logging
-log_level = logging.DEBUG if os.getenv("FLASK_ENV") == "development" else logging.INFO
+log_level = logging.DEBUG if Config.is_development() else logging.INFO
 logging.basicConfig(level=log_level, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -97,13 +99,15 @@ def favicon():
 
 # ─── Main Routes ──────────────────────────────────────────────────────────
 @app.route("/")
-def index():
+def index() -> str:
+    """Render the main landing page."""
     user = session.get("user")
     return render_template("index.html", user=user)
 
 
 @app.route("/timeline")
-def timeline():
+def timeline() -> str:
+    """Render the localized election timeline page."""
     country = request.args.get("country", "india").lower()
     address = request.args.get("address", "")
     state = request.args.get("state", "")
@@ -124,7 +128,8 @@ def timeline():
 
 @app.route("/chat", methods=["POST"])
 @rate_limit
-def chat():
+def chat() -> Response:
+    """Handle chat interactions with the Gemini logic engine."""
     data = request.get_json(silent=True)
     if not data:
         return jsonify(build_response(success=False, error="Invalid JSON payload.")), 400
@@ -134,7 +139,8 @@ def chat():
 
 @app.route("/eligibility", methods=["POST"])
 @rate_limit
-def eligibility():
+def eligibility() -> Response:
+    """Handle deterministic eligibility checks."""
     data = request.get_json(silent=True)
     if not data:
         return jsonify(build_response(success=False, error="Invalid JSON payload.")), 400
@@ -144,7 +150,8 @@ def eligibility():
 
 @app.route("/checklist", methods=["POST"])
 @rate_limit
-def checklist():
+def checklist() -> Response:
+    """Handle deterministic voter checklist generation."""
     data = request.get_json(silent=True)
     if not data:
         return jsonify(build_response(success=False, error="Invalid JSON payload.")), 400
@@ -154,7 +161,8 @@ def checklist():
 
 @app.route("/reminder", methods=["POST"])
 @rate_limit
-def reminder():
+def reminder() -> Response:
+    """Add a calendar reminder via OAuth."""
     data = request.get_json(silent=True)
     if not data:
         return jsonify(build_response(success=False, error="Invalid JSON payload.")), 400
@@ -166,7 +174,7 @@ def reminder():
 
 
 @app.route("/api/election-info", methods=["GET"])
-def election_info_api():
+def election_info_api() -> Response:
     """JSON API for election data."""
     country = request.args.get("country", "india").lower()
     address = request.args.get("address", "")
@@ -184,10 +192,10 @@ def election_info_api():
 
 # ─── Google OAuth 2.0 ─────────────────────────────────────────────────────
 @app.route("/login")
-def login():
-    from google_auth_oauthlib.flow import Flow
-    client_id = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
-    client_secret = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
+def login() -> Response:
+    """Initiate Google OAuth 2.0 login flow."""
+    client_id = Config.GOOGLE_OAUTH_CLIENT_ID
+    client_secret = Config.GOOGLE_OAUTH_CLIENT_SECRET
     if not client_id or not client_secret:
         return redirect(url_for("index"))
 
@@ -229,16 +237,14 @@ def login():
 
 
 @app.route("/callback")
-def oauth_callback():
+def oauth_callback() -> Response:
+    """Handle OAuth 2.0 callback and fetch tokens."""
     # If no code in request, just redirect home (not an error)
     if "code" not in request.args:
         return redirect(url_for("index"))
 
-    from google_auth_oauthlib.flow import Flow
-    from googleapiclient.discovery import build as build_service
-
-    client_id = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
-    client_secret = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
+    client_id = Config.GOOGLE_OAUTH_CLIENT_ID
+    client_secret = Config.GOOGLE_OAUTH_CLIENT_SECRET
     if not client_id or not client_secret:
         return redirect(url_for("index"))
 
@@ -295,7 +301,8 @@ def oauth_callback():
 
 
 @app.route("/logout")
-def logout():
+def logout() -> Response:
+    """Clear session data."""
     session.clear()
     return redirect(url_for("index"))
 
@@ -306,11 +313,11 @@ if __name__ == "__main__":
     # Suppress werkzeug dev warning in local runs
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
-    is_dev = os.getenv("FLASK_DEBUG", "0") == "1"
-    print(f"ElectionGuide running at http://127.0.0.1:{os.getenv('PORT', 5000)}")
+    
+    logger.info("ElectionGuide running at http://127.0.0.1:%s", Config.PORT)
     app.run(
-        debug=is_dev,
+        debug=Config.FLASK_DEBUG,
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 5000)),
-        use_reloader=is_dev
+        port=Config.PORT,
+        use_reloader=Config.FLASK_DEBUG
     )
