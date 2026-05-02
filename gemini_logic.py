@@ -79,8 +79,16 @@ def chat(message: str, context: dict = None, country: str = 'us') -> dict:
     hit_quota = False
     for model_name in _MODEL_CANDIDATES:
         try:
-            model = genai.GenerativeModel(model_name=model_name, system_instruction=system_prompt)
-            response = model.generate_content(message + ctx_suffix)
+            # Robust initialization for different SDK versions
+            try:
+                model = genai.GenerativeModel(model_name=model_name, system_instruction=system_prompt)
+                enriched_msg = message + ctx_suffix
+            except (TypeError, Exception):
+                # Fallback for older SDKs that don't support system_instruction argument
+                model = genai.GenerativeModel(model_name=model_name)
+                enriched_msg = f"{system_prompt}\n\nUser Question: {message}{ctx_suffix}"
+
+            response = model.generate_content(enriched_msg)
             
             if response.text:
                 result = build_response(
@@ -91,11 +99,11 @@ def chat(message: str, context: dict = None, country: str = 'us') -> dict:
                 return result
         except Exception as e:
             error_text = str(e).lower()
+            logger.error("Model %s crashed: %s", model_name, str(e)) # LOG THE EXACT ERROR
             if "429" in error_text or "quota" in error_text:
                 hit_quota = True
-                time.sleep(1)  # Anti-throttling
+                time.sleep(1) 
                 continue
-            logger.warning("Model %s failed, trying next...", model_name)
             continue
 
     if hit_quota:
