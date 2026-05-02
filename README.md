@@ -1,73 +1,58 @@
-# 🗳️ ElectionGuide AI: Non-Partisan Multi-Country Civic Assistant
+# 🗳️ ElectionGuide: AI-Powered Civic Assistant
 
 [![Python CI](https://github.com/Siva-2511/electionguide/actions/workflows/ci.yml/badge.svg)](https://github.com/Siva-2511/electionguide/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
 [![Live Demo](https://img.shields.io/badge/Live_Demo-Cloud_Run-9cf)](https://electionguide-app-1033116720582.us-central1.run.app)
 
 **🌐 Live Application:** [electionguide-app.run.app](https://electionguide-app-1033116720582.us-central1.run.app)
 
-> A non-partisan, AI-powered multi-country civic education assistant that guides users through the election processes in India, the US, UK, Australia, and Canada — from eligibility to casting their vote.
+> ElectionGuide is a non-partisan assistant that helps users navigate election processes in India, the US, and other countries. It uses Google Gemini to provide conversational guidance on registration, eligibility, and voting steps.
 
 ---
 
-> [!WARNING]
+> [!IMPORTANT]
 > **Note to Judges regarding Google Sign-In:** 
-> Because this application integrates with sensitive Google Calendar APIs (to add Election Day reminders to your personal calendar), it requires formal verification from Google, which is currently pending.
-> 
-> You **can** log in with your own Google Account to test the functionality. However, you will encounter a screen stating **"Google hasn’t verified this app"**. 
-> 
-> **To proceed and test the app:**
-> 1. Click **"Advanced"**.
-> 2. Click **"Go to electionguide-app (unsafe)"**.
-> 
-> We have implemented strict security measures and only request the `calendar.events.freebusy` and `calendar.events` scopes necessary for adding election reminders.
+> This app uses Google Calendar APIs to add election reminders. Because verification is pending, you will see a **"Google hasn’t verified this app"** screen. 
+> **To test:** Click **"Advanced"** and then **"Go to electionguide-app (unsafe)"**.
 
 ---
 
-## 🚀 Key Features
+## ✨ Core Features
 
-### 🇮🇳 India & 🇺🇸 Multi-Country Support
-- **Voter Registration Guide**: Direct links and step-by-step instructions for ECI (India) and Vote.gov (US).
-- **Eligibility Checker**: Instant age-based and residency-based validation.
-- **Polling Place Locator**: Integrated with the Google Civic Information API for US voters.
-- **Election Reminders**: One-click "Add to Google Calendar" for upcoming election dates.
+- **Conversational Guidance**: Ask questions about voter registration, eligibility (18+), and voting methods.
+- **Voter Eligibility Checker**: Fast, rule-based validation for India and US voters.
+- **Election Reminders**: One-click integration to add election dates to your **Google Calendar**.
+- **Polling Place Search**: Integrated US polling location lookups using the **Google Civic API**.
+- **Official Resources**: Direct links to **ECI (India)** and **Vote.gov (US)**.
 
-### 🤖 Resilient AI Intelligence
-The chatbot is built with a **production-grade resilience architecture** using the Google Gemini API:
-- **Dynamic Model Discovery**: The engine automatically crawls available models at runtime, prioritizing the **Gemini 2.5/2.0 Flash family** while maintaining deep fallbacks to 1.5 variants if primary quotas are hit.
-- **Fail-Safe Routing**: Implements a multi-layered retry loop with error classification (404, 429, 500) to ensure the bot stays online even during API load spikes.
-- **Circuit Breaker Design**: Features per-model health tracking and global circuit breakers to prevent latency cascades during upstream outages.
-- **Performance Optimization**: Dual-track caching (Model Discovery Cache + LRU Query Cache) ensures that repeated queries are answered instantly.
+---
+
+## 🤖 AI & Resilience
+
+The chatbot uses **Google Gemini** with a robust integration designed for high availability:
+- **Automatic Fallback**: If the primary Gemini model is rate-limited or unavailable, the system automatically switches to the next available healthy model.
+- **Smart Caching**: Uses memory-efficient caching to provide instant answers for repeated election queries.
+- **Safety Filters**: Implements filters to ensure all AI responses remain non-partisan and focused on civic education.
+- **Deterministic Logic**: Critical info (like voting age) is handled by code logic, while Gemini provides conversational context.
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Backend**: Python (Flask), Gunicorn (Production Server)
-- **Frontend**: Vanilla JS, Modern CSS (Premium UI with Glassmorphism)
-- **AI/ML**: Google Gemini (via `google-genai` SDK)
-- **Google Services**:
-  - **Civic Information API**: Real-time US election data.
-  - **Calendar API**: Automated election day scheduling.
-  - **Cloud Run**: Highly scalable, serverless deployment.
-  - **OAuth 2.0**: Secure user authentication.
+- **Backend**: Python (Flask) on **Google Cloud Run**.
+- **AI**: Google Gemini (via `google-genai` SDK).
+- **Integrations**: 
+  - **Google Civic Information API** (US polling data).
+  - **Google Calendar API** (Election reminders).
+  - **Google OAuth 2.0** (Secure login).
+- **Frontend**: Responsive HTML/CSS with modern glassmorphism design.
 
 ---
 
-## 🔐 Engineering Excellence & Security
+## 🧪 Quality & Testing
 
-- **Deterministic vs. AI Split**: Critical civic data (dates, ages) is handled via hardcoded logic; LLMs are used only for conversational guidance to prevent "hallucinations."
-- **Precision Safety Wall**: A strict regex-based filter monitors AI output to ensure answers remain neutral, non-partisan, and purely educational.
-- **Atomic State Management**: Thread-safe caching prevents data corruption across concurrent Cloud Run worker instances.
-- **Hard Timeout Guards**: All AI calls are wrapped in an 8-10s hard timeout using `ThreadPoolExecutor` to protect server health.
-
----
-
-## 🧪 Testing & Quality Assurance
-
-- **Robust Test Suite**: 58 automated tests covering API contracts, boundary conditions, and intent detection.
-- **CI/CD Integration**: Every push is verified via GitHub Actions to ensure 100% logic integrity.
-- **Error Observability**: Detailed diagnostic logging tracks model success rates and failover events for production monitoring.
+- **Automated Tests**: 58 tests covering intent detection, API contracts, and safety filters.
+- **CI/CD**: Verified via GitHub Actions on every push.
+- **Observability**: Built-in logging to monitor API health and failover events.
 
 ---
 
