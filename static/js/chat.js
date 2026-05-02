@@ -72,7 +72,7 @@ const COUNTRIES = {
     chatSub: 'வணக்கம்! Namaste! 🙏 Helping you navigate Indian elections.',
     eligDesc: 'Enter your age to check if you can vote in India.',
     timelineUrl: '/timeline?country=india',
-    electionDefault: { day: '2029-04-01', name: 'India General Election' },
+    electionDefault: { day: '2026-05-04', name: 'Tamil Nadu Election Day' },
     welcome: [
       "வணக்கம்! Namaste! 🙏 I'm ElectionGuide, your India election assistant.",
       "I can help you with:",
