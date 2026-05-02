@@ -7,6 +7,7 @@ Acts as the secure conversational brain for ElectionGuide.
 import os
 import re
 import logging
+import time
 from google import genai
 from utils.response import build_response
 
@@ -44,12 +45,13 @@ _SYSTEM_PROMPTS = {
     "india": SYSTEM_PROMPT_INDIA, "us": SYSTEM_PROMPT_US,
 }
 
-# Model names to try in order
+# Model names to try in order (Optimized for free tier stability)
 _MODEL_CANDIDATES = [
-    "gemini-1.5-flash",
-    "gemini-1.5-flash-8b",
-    "gemini-2.0-flash",
+    "gemini-2.0-flash-exp",
+    "gemini-1.5-flash-latest",
 ]
+
+_response_cache = {}  # Global in-memory cache for repeated questions
 
 def _initialize_client():
     """Initialize the new google-genai client."""
@@ -63,8 +65,15 @@ def _initialize_client():
         return None
 
 def chat(message: str, context: dict = None, country: str = 'us') -> dict:
-    """Generate response using the new google-genai SDK with model waterfall."""
+    """Generate response using the new google-genai SDK with model waterfall and caching."""
     fallback_msg = _FALLBACKS.get(country, SAFE_FALLBACK)
+    
+    # Check cache first to save quota
+    cache_key = f"{country}:{message.strip().lower()[:50]}"
+    if cache_key in _response_cache:
+        logger.info("Serving cached response for: %s", cache_key)
+        return _response_cache[cache_key]
+
     client = _initialize_client()
     if not client:
         return build_response(success=True, data={"reply": fallback_msg, "source": "fallback"})
@@ -86,14 +95,17 @@ def chat(message: str, context: dict = None, country: str = 'us') -> dict:
                 config=config
             )
             if response.text:
-                return build_response(
+                result = build_response(
                     success=True,
                     data={"reply": enforce_readability(filter_output(response.text)), "source": "gemini"}
                 )
+                _response_cache[cache_key] = result  # Store in cache
+                return result
         except Exception as e:
             error_text = str(e).lower()
             if "429" in error_text or "quota" in error_text:
                 hit_quota = True
+                time.sleep(1)  # Anti-throttle delay
                 continue
             logger.warning("Model %s failed, trying next...", model_id)
             continue
