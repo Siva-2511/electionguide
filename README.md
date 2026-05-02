@@ -26,6 +26,14 @@
 
 ---
 
+## 📸 Demo Screenshots
+
+| AI Assistant Interface | Election Timeline & Info |
+| :--- | :--- |
+| ![Assistant Interface](docs/screenshots/demo_assistant.jpg) | ![Timeline Interface](docs/screenshots/demo_timeline.jpg) |
+
+---
+
 ## 🤖 AI & Resilience
 
 The chatbot uses **Google Gemini** with a robust integration designed for high availability:
