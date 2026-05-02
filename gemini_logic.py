@@ -1,14 +1,14 @@
 """
 gemini_logic.py
 
-Modernized Google Gemini AI integration module using the google-genai SDK.
-Acts as the secure conversational brain for ElectionGuide.
+Restored to stable google-generativeai SDK for hackathon submission stability.
+Includes high-performance caching and anti-throttling logic.
 """
 import os
 import re
 import logging
 import time
-from google import genai
+import google.generativeai as genai
 from utils.response import build_response
 
 logger = logging.getLogger(__name__)
@@ -34,8 +34,7 @@ _FALLBACKS = {
 # Hardened system prompts
 SYSTEM_PROMPT_INDIA = """You are ElectionGuide, a helpful non-partisan India Election Education Assistant.
 Answer any question about Indian elections, voting, civic processes, and democracy.
-Do NOT express political opinions. Do NOT tell users who to vote for.
-Always provide official ECI resources (eci.gov.in, voters.eci.gov.in)."""
+Do NOT express political opinions. Always provide official ECI resources (eci.gov.in, voters.eci.gov.in)."""
 
 SYSTEM_PROMPT_US = """You are ElectionGuide, a helpful non-partisan US Civic Education Assistant.
 Answer any question about US elections, voting, and democracy.
@@ -45,38 +44,25 @@ _SYSTEM_PROMPTS = {
     "india": SYSTEM_PROMPT_INDIA, "us": SYSTEM_PROMPT_US,
 }
 
-# Model names to try in order (Optimized for free tier stability)
+# Stable model names for the proven SDK
 _MODEL_CANDIDATES = [
-    "gemini-2.0-flash-exp",
-    "gemini-1.5-flash-latest",
+    "models/gemini-1.5-flash",
+    "models/gemini-1.5-pro",
 ]
 
-_response_cache = {}  # Global in-memory cache for repeated questions
-
-def _initialize_client():
-    """Initialize the new google-genai client."""
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        return None
-    try:
-        return genai.Client(api_key=api_key)
-    except Exception as e:
-        logger.error("GenAI client init failed: %s", str(e))
-        return None
+_response_cache = {}  # Global in-memory cache
 
 def chat(message: str, context: dict = None, country: str = 'us') -> dict:
-    """Generate response using the new google-genai SDK with model waterfall and caching."""
+    """Generate response using the stable SDK with model waterfall and caching."""
     fallback_msg = _FALLBACKS.get(country, SAFE_FALLBACK)
-    
-    # Check cache first to save quota
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return build_response(success=True, data={"reply": fallback_msg, "source": "fallback"})
+
+    # Check cache first
     cache_key = f"{country}:{message.strip().lower()[:50]}"
     if cache_key in _response_cache:
-        logger.info("Serving cached response for: %s", cache_key)
         return _response_cache[cache_key]
-
-    client = _initialize_client()
-    if not client:
-        return build_response(success=True, data={"reply": fallback_msg, "source": "fallback"})
 
     system_prompt = _SYSTEM_PROMPTS.get(country, SYSTEM_PROMPT_US)
     ctx_suffix = ""
@@ -85,29 +71,31 @@ def chat(message: str, context: dict = None, country: str = 'us') -> dict:
         if day:
             ctx_suffix = f"\n[Context: Next election on {day}]"
 
+    try:
+        genai.configure(api_key=api_key)
+    except Exception:
+        return build_response(success=True, data={"reply": fallback_msg, "source": "fallback"})
+
     hit_quota = False
-    for model_id in _MODEL_CANDIDATES:
+    for model_name in _MODEL_CANDIDATES:
         try:
-            config = {"system_instruction": system_prompt, "temperature": 0.7}
-            response = client.models.generate_content(
-                model=model_id,
-                contents=message + ctx_suffix,
-                config=config
-            )
+            model = genai.GenerativeModel(model_name=model_name, system_instruction=system_prompt)
+            response = model.generate_content(message + ctx_suffix)
+            
             if response.text:
                 result = build_response(
                     success=True,
                     data={"reply": enforce_readability(filter_output(response.text)), "source": "gemini"}
                 )
-                _response_cache[cache_key] = result  # Store in cache
+                _response_cache[cache_key] = result
                 return result
         except Exception as e:
             error_text = str(e).lower()
             if "429" in error_text or "quota" in error_text:
                 hit_quota = True
-                time.sleep(1)  # Anti-throttle delay
+                time.sleep(1)  # Anti-throttling
                 continue
-            logger.warning("Model %s failed, trying next...", model_id)
+            logger.warning("Model %s failed, trying next...", model_name)
             continue
 
     if hit_quota:
@@ -135,25 +123,11 @@ def filter_output(text: str) -> str:
     return text
 
 def enforce_readability(text: str) -> str:
-    """
-    Enforce 8th-grade readability on AI output.
-    Caps paragraphs at 3 sentences and converts long blocks to bullet points.
-    """
-    if not text:
-        return SAFE_FALLBACK
-
-    # Strip excessive whitespace
+    """Bullet-point formatter for readability."""
+    if not text: return SAFE_FALLBACK
     text = re.sub(r'[ \t]+', ' ', text.strip())
-    text = re.sub(r'\n{3,}', '\n\n', text)
-
-    # Split into sentences
     sentences = re.split(r'(?<=[.!?])\s+', text)
-
-    if len(sentences) > 5 and not any(
-        line.strip().startswith(('1.', '2.', '-', '*', '•'))
-        for line in text.split('\n')
-    ):
+    if len(sentences) > 5:
         bullet_lines = [f"• {s.strip()}" for s in sentences if s.strip()]
         return '\n'.join(bullet_lines[:7])
-
     return text
