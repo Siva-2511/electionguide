@@ -34,26 +34,24 @@ def oversized_payload():
 
 @pytest.fixture
 def mock_gemini_success():
-    """Mock a successful Gemini API response."""
-    with patch("gemini_logic.genai") as mock_genai:
-        mock_model = MagicMock()
+    """Mock a successful google-genai API response."""
+    with patch("gemini_logic.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
         mock_response = MagicMock()
         mock_response.text = "To register to vote, visit vote.gov and fill out the registration form."
-        mock_model.generate_content.return_value = mock_response
-        mock_genai.GenerativeModel.return_value = mock_model
-        mock_genai.configure = MagicMock()
-        yield mock_genai
+        mock_client.models.generate_content.return_value = mock_response
+        mock_client_class.return_value = mock_client
+        yield mock_client_class
 
 
 @pytest.fixture
 def mock_gemini_failure():
-    """Mock a failing Gemini API (simulates network error or API crash)."""
-    with patch("gemini_logic.genai") as mock_genai:
-        mock_model = MagicMock()
-        mock_model.generate_content.side_effect = Exception("API unavailable")
-        mock_genai.GenerativeModel.return_value = mock_model
-        mock_genai.configure = MagicMock()
-        yield mock_genai
+    """Mock a failing google-genai API response."""
+    with patch("gemini_logic.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client.models.generate_content.side_effect = Exception("API unavailable")
+        mock_client_class.return_value = mock_client
+        yield mock_client_class
 
 
 @pytest.fixture
