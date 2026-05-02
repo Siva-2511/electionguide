@@ -193,6 +193,10 @@ def _initialize_model(country: str = 'us'):
     if not api_key:
         logger.warning("GEMINI_API_KEY not set")
         return None, None
+    
+    # DEBUG: Verify the key being used
+    masked_key = api_key[:8] + "..." + api_key[-4:] if api_key else "None"
+    print(f"DEBUG: Initializing AI with key: {masked_key}")
     try:
         prompt = SYSTEM_PROMPT_INDIA if country == 'india' else SYSTEM_PROMPT_US
         genai.configure(api_key=api_key)
