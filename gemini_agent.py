@@ -172,11 +172,11 @@ def _try_model(name: str, prompt: str):
         return None, None
 
 
-# Model names to try in order (newest first, oldest last as fallback)
+# Model names to try in order (waterfall fallback)
 _MODEL_CANDIDATES = [
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
     "gemini-1.5-pro",
+    "gemini-1.5-flash",
+    "gemini-2.0-flash",
     "gemini-pro",
 ]
 
@@ -286,7 +286,7 @@ def chat(message: str, context: dict = None, country: str = 'us') -> dict:
             
             is_quota = any(x in error_text for x in ["429", "quota", "resourceexhausted", "exhausted", "rate limit"])
             if is_quota:
-                logger.warning("Quota exceeded for %s, trying next", model_name)
+                logger.warning("Quota exceeded for %s. Exact Error: %s", model_name, error_text)
                 hit_quota = True
                 continue
             elif any(k in error_text for k in ('404', 'not found', 'not supported')):
