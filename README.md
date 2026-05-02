@@ -181,6 +181,23 @@ pytest
 
 ---
 
+### 🤖 AI Intelligence (Gemini Titanium Engine)
+The chatbot is powered by a custom-built **Titanium-Bulletproof** resilience engine:
+- **Modern SDK**: Fully migrated to the high-performance `google-genai` SDK.
+- **Dynamic Discovery**: Automatically crawls the Gemini API to find the best available models (e.g., 2.0-flash, 1.5-pro) per region.
+- **Elite Reliability**: Features per-model circuit breakers and health tracking to skip failing models instantly.
+- **Dual-Track Caching**: Combines discovery TTL caching (10m) and atomic user-query caching (LRU) for sub-second responses.
+- **Non-Partisan Guard**: A strict "Precision Safety Wall" ensures answers remain neutral and civic-focused.
+
+---
+
+## 🛠️ Technology Stack
+implemented via in-memory `defaultdict` for hackathon simplicity. A true production deployment would use a distributed Redis store to sync limits across Gunicorn workers).*
+- **Schema Enforcement**: `response_guard.py` guarantees every service returns the correct format.
+- **No Hardcoded Secrets**: All API keys in `.env` — never in source code.
+
+---
+
 ## 🔐 Security Features
 
 - **Anti-Jailbreak Input Filter**: Blocks prompt injection attempts before reaching AI.
