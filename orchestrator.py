@@ -82,12 +82,13 @@ def process_chat(data: dict) -> dict:
     
     # Handle explicit intents (Civic Data / Snappy Answers)
     if intent == 'voter_registration':
-        return "To register in India, visit voters.eci.gov.in. You'll need your age proof and address proof. For the US, visit vote.gov."
+        return build_response(success=True, data={"reply": "To register in India, visit voters.eci.gov.in. You'll need Form 6, a passport-sized photo, and proof of age/address. For the US, visit vote.gov to register online or by mail.", "source": "static_intent"})
     
     if intent == 'voter_checklist':
-        return "Your Voter Checklist: 1. Check eligibility (18+), 2. Register on the electoral roll, 3. Find your polling booth, 4. Carry your EPIC card/Identity proof on election day."
+        return build_response(success=True, data={"reply": "Voter Checklist: 1. Ensure you're 18+. 2. Register on the electoral roll at voters.eci.gov.in. 3. Find your polling booth using the 'Voter Helpline' app. 4. Bring your EPIC card or a valid ID card on election day.", "source": "static_intent"})
 
     if intent == 'eligibility':
+        return build_response(success=True, data={"reply": "In India and the US, you are eligible to vote if you are a citizen of your country and are at least 18 years of age or older on the qualifying date.", "source": "static_intent"})
         age = validate_age(data.get("age", ""))
         if age is not None:
             # India min age is also 18 — same deterministic check
