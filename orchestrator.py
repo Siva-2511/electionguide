@@ -21,7 +21,7 @@ from utils.validators import (
     validate_payload_size,
     validate_age,
 )
-import gemini_agent
+import gemini_logic
 from services import eligibility, checklist, civic_api
 from services.india_api import get_india_election_info
 
@@ -73,7 +73,7 @@ def process_chat(data: dict) -> dict:
         )
 
     # --- Step 3: Intent detection (lightweight, no AI) ---
-    intent_result = gemini_agent.detect_intent(message)
+    intent_result = gemini_logic.detect_intent(message)
     intent = intent_result.get("intent", "general")
 
     # --- Step 4: Deterministic routing (no AI for logic) ---
@@ -102,7 +102,7 @@ def process_chat(data: dict) -> dict:
         extra_data["election_info"] = context
 
     # --- Step 5: AI response (country-aware) ---
-    ai_result = gemini_agent.chat(message, context=context, country=country)
+    ai_result = gemini_logic.chat(message, context=context, country=country)
     reply = ai_result.get("data", {}).get("reply", "")
 
     # --- Step 6: Calendar trigger (FORCED if election date is in context) ---
