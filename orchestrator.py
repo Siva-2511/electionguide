@@ -79,8 +79,15 @@ def process_chat(data: dict) -> dict:
     # --- Step 4: Deterministic routing (no AI for logic) ---
     context = {}
     extra_data = {}
+    
+    # Handle explicit intents (Civic Data / Snappy Answers)
+    if intent == 'voter_registration':
+        return "To register in India, visit voters.eci.gov.in. You'll need your age proof and address proof. For the US, visit vote.gov."
+    
+    if intent == 'voter_checklist':
+        return "Your Voter Checklist: 1. Check eligibility (18+), 2. Register on the electoral roll, 3. Find your polling booth, 4. Carry your EPIC card/Identity proof on election day."
 
-    if intent == "eligibility":
+    if intent == 'eligibility':
         age = validate_age(data.get("age", ""))
         if age is not None:
             # India min age is also 18 — same deterministic check

@@ -26,7 +26,7 @@ SAFE_FALLBACK = (
 )
 INDIA_FALLBACK = (
     "Namaste! I'm your India Election Guide. I can help with: "
-    "ECI voter registration, eligibility (18+), EVM voting steps, and election schedules. "
+    "Voter registration, eligibility (18+), EVM voting steps, and election schedules. "
     "What would you like to know? / आप क्या जानना चाहते हैं?"
 )
 UK_FALLBACK = (
@@ -174,15 +174,11 @@ def _try_model(name: str, prompt: str):
 
 # Model names to try in order (high-availability first)
 _MODEL_CANDIDATES = [
-    "gemini-1.5-flash-8b",
     "models/gemini-1.5-flash-8b",
-    "gemini-1.5-flash",
     "models/gemini-1.5-flash",
-    "gemini-1.5-flash-latest",
+    "models/gemini-1.5-flash-001",
+    "models/gemini-1.5-flash-002",
     "models/gemini-1.5-flash-latest",
-    "gemini-1.5-pro",
-    "models/gemini-1.5-pro",
-    "gemini-2.0-flash",
     "models/gemini-2.0-flash",
 ]
 
@@ -322,8 +318,8 @@ def detect_intent(message: str) -> dict:
     if any(k in message_lower for k in ["eligib", "can i vote", "old enough", "age", "citizen"]):
         return {"intent": "eligibility", "confidence": "high"}
 
-    if any(k in message_lower for k in ["register", "registration", "sign up"]):
-        return {"intent": "registration", "confidence": "high"}
+    if any(k in message_lower for k in ["register", "registration", "sign up", "form 6"]):
+        return {"intent": "voter_registration", "confidence": "high"}
 
     if any(k in message_lower for k in ["when", "election day", "date", "deadline", "location", "polling", "where"]):
         return {"intent": "election_info", "confidence": "high"}
