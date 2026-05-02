@@ -197,7 +197,12 @@ def _add_calendar_reminder(election_day: str, election_name: str, token: str = N
         logger.info("Calendar event created for %s: %s", election_day, event.get('htmlLink'))
         return build_response(
             success=True,
-            data={"event": event_body, "link": event.get('htmlLink'), "message": "Calendar reminder set!"}
+            data={
+                "event": event_body, 
+                "link": event.get('htmlLink'), 
+                "date": election_day,
+                "message": f"Calendar reminder set for {election_day}!"
+            }
         )
 
     except Exception as e:

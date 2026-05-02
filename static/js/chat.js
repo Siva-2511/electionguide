@@ -437,7 +437,7 @@ if (reminderBtn) {
       const data = await res.json();
       if (data.success) { 
         reminderResult.classList.add('success'); 
-        reminderResult.innerHTML = `✅ Reminder successfully added to your <a href="${data.data.link}" target="_blank" style="color:white; text-decoration:underline;">Google Calendar</a>!`; 
+        reminderResult.innerHTML = `✅ Reminder for <strong>${data.data.date}</strong> successfully added to your <a href="${data.data.link}" target="_blank" style="color:white; text-decoration:underline;">Google Calendar</a>!`; 
       }
       else { 
         reminderResult.classList.add('error'); 
