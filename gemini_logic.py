@@ -1,168 +1,273 @@
 """
 gemini_logic.py
 
-Modernized Gemini integration using the google-genai SDK.
-Optimized for Google Cloud Run (Python 3.11+).
-Features: In-memory caching, model waterfall, and anti-throttling.
+Production-Grade Gemini integration for ElectionGuide.
+Focus: Stability, Safety, Deterministic Execution, and Hard Fail Protection.
 """
+
 import os
 import re
 import logging
-import time
-import threading
 import hashlib
+import threading
+import time
+from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
+
 from google import genai
 from google.genai import types
 from utils.response import build_response
 
 logger = logging.getLogger(__name__)
 
-# Safe fallback messages
+# -----------------------
+# HARD GUARANTEE SETTINGS
+# -----------------------
+CACHE_VERSION = "v1"
+_CACHE_MAX = 500
+_GEMINI_TIMEOUT = 8  # HARD ENFORCED
+
+_executor = ThreadPoolExecutor(max_workers=4)
+
+# -----------------------
+# Fallbacks
+# -----------------------
 SAFE_FALLBACK = (
     "I'm your US Election Guide. I can help with voter registration, eligibility, "
     "voting steps, and election dates. What would you like to know?"
 )
+
 INDIA_FALLBACK = (
-    "Namaste! I'm your India Election Guide. I can help with: "
-    "Voter registration, eligibility (18+), EVM voting steps, and election schedules. "
+    "Namaste! I'm your India Election Guide. I can help with voter registration, "
+    "eligibility (18+), EVM voting steps, and election schedules. "
     "What would you like to know? / आप क्या जानना चाहते हैं?"
 )
 
-_FALLBACKS = {
-    "india": INDIA_FALLBACK, "us": SAFE_FALLBACK,
-    "uk": "Hello! I'm your UK Election Guide.",
-    "australia": "G'day! I'm your Australia Election Guide.",
-    "canada": "Hello! I'm your Canada Election Guide.",
+FALLBACKS = {
+    "india": INDIA_FALLBACK,
+    "us": SAFE_FALLBACK,
 }
 
-# Production System Prompts
-SYSTEM_PROMPT_INDIA = """You are ElectionGuide, a helpful non-partisan India Election Education Assistant.
-Answer any question about Indian elections, voting, civic processes, and democracy.
-Do NOT express political opinions. Always provide official ECI resources (eci.gov.in, voters.eci.gov.in)."""
-
-SYSTEM_PROMPT_US = """You are ElectionGuide, a helpful non-partisan US Civic Education Assistant.
-Answer any question about US elections, voting, and democracy.
-Do NOT express political opinions. Always provide official resources like vote.gov."""
-
-_SYSTEM_PROMPTS = {
-    "india": SYSTEM_PROMPT_INDIA, "us": SYSTEM_PROMPT_US,
+# -----------------------
+# System Prompts
+# -----------------------
+SYSTEM_PROMPTS = {
+    "india": "Non-partisan India election assistant. Use only ECI sources (eci.gov.in).",
+    "us": "Non-partisan US election assistant. Use vote.gov only.",
 }
 
-# Stable model names for the new google-genai SDK
-_MODEL_CANDIDATES = [
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
-]
+# -----------------------
+# Cache (Thread-safe LRU)
+# -----------------------
+_cache = OrderedDict()
+_lock = threading.Lock()
 
-_cache_lock = threading.Lock()
-_response_cache = {}  # Global in-memory cache
-_CACHE_MAX_SIZE = 500 # Prevents memory leaks in Cloud Run
-
+# -----------------------
+# Client
+# -----------------------
 def _get_client():
-    """Initialize the new google-genai client."""
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return None
     return genai.Client(api_key=api_key)
 
-def chat(message: str, context: dict = None, country: str = 'us') -> dict:
-    """Generate response using the new SDK with model waterfall and caching."""
-    fallback_msg = _FALLBACKS.get(country, SAFE_FALLBACK)
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        logger.warning("GEMINI_API_KEY missing - using fallback")
-        return build_response(success=True, data={"reply": fallback_msg, "source": "fallback"})
-    
-    # 1. Thread-safe MD5 Cache Check (avoids collisions)
-    clean_msg = message.strip().lower()
-    msg_hash = hashlib.md5(clean_msg.encode()).hexdigest()
-    cache_key = f"{country}:{msg_hash}"
-    with _cache_lock:
-        if cache_key in _response_cache:
-            logger.info("Serving cached response for: %s", cache_key)
-            return _response_cache[cache_key]
+# -----------------------
+# Model selection (stable only)
+# -----------------------
+PREFERRED_MODELS = [
+    "gemini-1.5-flash-002",
+    "gemini-1.5-flash",
+]
+
+def _pick_model(client):
+    try:
+        models = client.models.list() or []
+
+        for pref in PREFERRED_MODELS:
+            for m in models:
+                name = m.name.replace("models/", "")
+                if pref in name and "preview" not in name.lower():
+                    return name
+
+        for m in models:
+            name = m.name.replace("models/", "")
+            if "flash" in name.lower() and "preview" not in name.lower():
+                return name
+
+    except Exception as e:
+        logger.warning("Model discovery failed: %s", e)
+
+    return PREFERRED_MODELS[0]
+
+# -----------------------
+# Response extraction
+# -----------------------
+def _extract_text(resp):
+    try:
+        if getattr(resp, "text", None):
+            return resp.text
+
+        candidates = getattr(resp, "candidates", None)
+        if candidates:
+            content = getattr(candidates[0], "content", None)
+            parts = getattr(content, "parts", None)
+            if parts:
+                return getattr(parts[0], "text", "")
+    except Exception:
+        pass
+    return ""
+
+# -----------------------
+# Safety filter (strict but safe)
+# -----------------------
+def filter_output(text: str, country: str = "us"):
+    if not text:
+        return ""
+
+    blocked_patterns = [
+        r"\bvote for\b",
+        r"\byou should vote for\b",
+        r"\bbest candidate\b",
+        r"\bbest choice\b",
+        r"\bsupport the\b",
+        r"\bshould choose\b",
+        r"\bwinner is\b",
+    ]
+
+    for p in blocked_patterns:
+        if re.search(p, text, re.IGNORECASE):
+            return FALLBACKS.get(country, SAFE_FALLBACK)
+
+    return text
+
+# -----------------------
+# Formatting
+# -----------------------
+def enforce_readability(text: str):
+    if not text:
+        return ""
+
+    text = re.sub(r"\s+", " ", text).strip()
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+
+    if len(sentences) > 5:
+        return "\n".join(
+            f"• {s.strip()}" for s in sentences[:7] if s.strip()
+        )
+
+    return text
+
+# -----------------------
+# CORE GEMINI EXECUTION (with HARD TIMEOUT)
+# -----------------------
+def _call_gemini(client, model, prompt, system_instruction):
+    def task():
+        return client.models.generate_content(
+            model=model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.7,
+                max_output_tokens=700,
+            ),
+        )
+
+    future = _executor.submit(task)
+
+    try:
+        return future.result(timeout=_GEMINI_TIMEOUT)
+    except TimeoutError:
+        future.cancel()
+        raise TimeoutError("Gemini request timed out")
+
+# -----------------------
+# MAIN CHAT
+# -----------------------
+def chat(message: str, context=None, country="us"):
+    start_time = time.time()
+
+    raw = (message or "").strip()
+    country = (country or "us").lower()
+
+    if country not in FALLBACKS:
+        country = "us"
+
+    fallback = FALLBACKS[country]
+
+    if not raw:
+        return build_response(True, {"reply": fallback, "source": "fallback"})
+
+    normalized = " ".join(raw.lower().split())
+    ctx_id = context.get("election_day") if context else ""
+
+    cache_key = hashlib.md5(
+        f"{CACHE_VERSION}:{country}:{normalized}:{ctx_id}".encode()
+    ).hexdigest()
+
+    # ---------------- CACHE READ ----------------
+    with _lock:
+        if cache_key in _cache:
+            _cache.move_to_end(cache_key)
+            return build_response(True, _cache[cache_key])
 
     client = _get_client()
     if not client:
-        return build_response(success=True, data={"reply": fallback_msg, "source": "fallback"})
+        return build_response(True, {"reply": fallback, "source": "fallback"})
 
-    # 2. Prepare Request
-    system_prompt = _SYSTEM_PROMPTS.get(country, SYSTEM_PROMPT_US)
-    prompt_with_context = message
+    model = _pick_model(client)
+
+    prompt = raw
     if context and context.get("election_day"):
-        prompt_with_context += f"\n[Context: Next election is on {context['election_day']}]"
+        prompt += f"\nElection date: {context['election_day']}"
 
-    # 3. Model Waterfall
-    hit_quota = False
-    for model_id in _MODEL_CANDIDATES:
-        try:
-            response = client.models.generate_content(
-                model=model_id,
-                contents=prompt_with_context,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_prompt,
-                    temperature=0.7,
-                )
-            )
-            
-            # 4. Safe Response Parsing (prevents crashes on safety blocks)
-            raw_text = getattr(response, "text", None)
-            if raw_text and raw_text.strip():
-                result = build_response(
-                    success=True,
-                    data={"reply": enforce_readability(filter_output(raw_text)), "source": "gemini"}
-                )
-                with _cache_lock:
-                    if len(_response_cache) > _CACHE_MAX_SIZE:
-                        # Safe in-place deletion to avoid scope issues
-                        keys_to_remove = list(_response_cache.keys())[:-200]
-                        for k in keys_to_remove:
-                            del _response_cache[k]
-                    _response_cache[cache_key] = result
-                return result
-            else:
-                logger.warning("Empty or blocked response from %s", model_id)
-                continue
-        except Exception as e:
-            err = str(e).lower()
-            logger.error("Model %s failed: %s", model_id, err)
-            if any(k in err for k in ["429", "quota", "rate limit", "exhausted"]):
-                hit_quota = True
-                time.sleep(0.5) # Anti-throttle delay before switching/retrying
-                continue
-            continue
+    try:
+        resp = _call_gemini(
+            client,
+            model,
+            prompt,
+            SYSTEM_PROMPTS[country]
+        )
 
-    if hit_quota:
-        return build_response(success=True, data={"reply": INDIA_FALLBACK if country == 'india' else SAFE_FALLBACK, "source": "quota_exceeded"})
+        text = _extract_text(resp)
 
-    return build_response(success=True, data={"reply": fallback_msg, "source": "fallback"})
+        if not text:
+            return build_response(True, {"reply": fallback, "source": "fallback"})
 
+        filtered = filter_output(text, country)
+        cleaned = enforce_readability(filtered)
+
+        result = {"reply": cleaned, "source": "gemini"}
+
+        # ---------------- CACHE WRITE ----------------
+        with _lock:
+            _cache[cache_key] = result
+            _cache.move_to_end(cache_key)
+
+            if len(_cache) > _CACHE_MAX:
+                _cache.popitem(last=False)
+
+        logger.info("Response time: %.2fs", time.time() - start_time)
+
+        return build_response(True, result)
+
+    except Exception as e:
+        logger.error("Gemini error: %s", str(e))
+        return build_response(True, {"reply": fallback, "source": "fallback"})
+
+
+# -----------------------
+# INTENT DETECTION
+# -----------------------
 def detect_intent(message: str) -> dict:
-    """Keyword-based intent detection for snappy responses."""
-    msg = message.lower()
-    if any(k in msg for k in ["register", "registration", "sign up", "form 6"]):
+    msg = (message or "").lower()
+
+    if "register" in msg:
         return {"intent": "voter_registration", "confidence": "high"}
-    if any(k in msg for k in ["eligib", "can i vote", "old enough", "age"]):
+
+    if "how" in msg or "steps" in msg:
+        return {"intent": "voter_checklist", "confidence": "medium"}
+
+    if "vote" in msg or "eligible" in msg:
         return {"intent": "eligibility", "confidence": "high"}
-    if any(k in msg for k in ["checklist", "steps", "how do i", "prepare"]):
-        return {"intent": "voter_checklist", "confidence": "high"}
+
     return {"intent": "general", "confidence": "low"}
-
-def filter_output(text: str) -> str:
-    """Filter for biased/political content."""
-    if not text: return ""
-    forbidden = [r"\bvote for\b", r"\byou should vote for\b", r"\bbest choice\b"]
-    for pattern in forbidden:
-        if re.search(pattern, text, re.IGNORECASE):
-            return SAFE_FALLBACK
-    return text
-
-def enforce_readability(text: str) -> str:
-    """Formatter for readability on mobile/web."""
-    if not text: return ""
-    text = re.sub(r'[ \t]+', ' ', text.strip())
-    sentences = re.split(r'(?<=[.!?])\s+', text)
-    if len(sentences) > 5:
-        bullet_lines = [f"• {s.strip()}" for s in sentences if s.strip()]
-        return '\n'.join(bullet_lines[:7])
-    return text
