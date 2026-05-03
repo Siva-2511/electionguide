@@ -150,17 +150,22 @@ def timeline() -> str:
     address = request.args.get("address", "")
     state = request.args.get("state", "")
 
+    # Determine the localized election context based on country
     if country == "india":
+        # Fetch data for India (State-specific if provided)
         civic_result = get_india_election_info(state or None)
         election_data = civic_result.get("data", {})
     elif country in ("uk", "australia", "canada"):
+        # Fetch high-level election info for Commonwealth nations
         civic_result = get_world_election_info(country)
         election_data = civic_result.get("data", {})
     else:
+        # Default to US using Google Civic Information API
         country = "us"
         civic_result = get_election_info(address or None)
         election_data = civic_result.get("data", {})
 
+    # Render the timeline template with injected civic data
     return render_template("timeline.html", election=election_data, country=country)
 
 
