@@ -81,9 +81,9 @@
 
         {% if user %}
         <div class="user-badge">
-          <img src="{{ user.picture }}" alt="{{ user.name }}" class="user-avatar" width="30" height="30" />
+          <img src="{{ user.picture }}" alt="User profile" class="user-avatar" width="30" height="30" />
           <span class="user-name">{{ user.name }}</span>
-          <a href="/logout" class="btn btn-outline btn-sm" id="btn-logout">Logout</a>
+          <a href="/logout" class="btn btn-outline btn-sm" id="btn-logout" aria-label="Sign out">Logout</a>
         </div>
         {% else %}
         <a href="/login" class="btn btn-primary btn-sm" id="btn-login" aria-label="Sign in">🔐 Sign in</a>

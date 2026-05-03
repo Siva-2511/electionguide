@@ -1,5 +1,7 @@
 # 🗳️ ElectionGuide: AI-Powered Civic Assistant
 
+## 🚀 Final Submission Version (Attempt 3) - [May 3, 2026]
+
 [![Python CI](https://github.com/Siva-2511/electionguide/actions/workflows/ci.yml/badge.svg)](https://github.com/Siva-2511/electionguide/actions/workflows/ci.yml)
 [![Live Demo](https://img.shields.io/badge/Live_Demo-Cloud_Run-9cf)](https://electionguide-app-1033116720582.us-central1.run.app)
 

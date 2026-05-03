@@ -33,116 +33,45 @@ logger = logging.getLogger(__name__)
 
 
 def process_chat(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Main chat pipeline.
+    """Main chat pipeline."""
+    # Step 1: Input validation
+    validation_error = _validate_chat_input(data)
+    if validation_error:
+        return validation_error
 
-    Flow: validate → jailbreak check → intent → context fetch → AI → filter → translate → respond
-
-    Args:
-        data (Dict[str, Any]): Dictionary with 'message', optional 'lang', 'address', 'age', 'status', 'country'.
-
-    Returns:
-        Dict[str, Any]: build_response() with final reply and metadata.
-    """
-    # --- Step 1: Input validation ---
-    raw_message = data.get("message", "")
-    message = sanitize_text(raw_message)
-    sanitize_text(data.get("lang", "en"))
-    address = sanitize_text(data.get("address", ""))
+    message = sanitize_text(data.get("message", ""))
     country = sanitize_text(data.get("country", "us")).lower()
     if country not in ("us", "india", "uk", "australia", "canada"):
         country = "us"
 
-    if not message:
-        return build_response(success=False, error="Message cannot be empty.")
-
-    if not validate_payload_size(message):
-        return build_response(
-            success=False,
-            error="Message is too long. Please keep your question under 500 characters.",
-        )
-
-    # --- Step 2: Jailbreak check ---
+    # Step 2: Jailbreak check
     if check_jailbreak_attempt(message):
-        logger.warning("Jailbreak attempt blocked")
-        guide = country.capitalize()
-        return build_response(
-            success=True,
-            data={
-                "reply": f"I'm here to help with {guide} election questions only. What would you like to know about voting?",
-                "source": "security_filter",
-            },
-        )
+        return _handle_jailbreak(country)
 
-    # --- Step 3: Intent detection (lightweight, no AI) ---
+    # Step 3: Intent detection
     intent_result = gemini_logic.detect_intent(message)
     intent = intent_result.get("intent", "general")
 
-    # --- Step 4: Deterministic routing (no AI for logic) ---
-    context = {}
-    extra_data = {}
+    # Step 4: Deterministic routing (Static Intents)
+    static_response = _handle_static_intents(intent, message, country)
+    if static_response:
+        return static_response
 
-    # Handle explicit intents (Civic Data / Snappy Answers)
-    if intent == "voter_registration":
-        return build_response(
-            success=True,
-            data={
-                "reply": "To register in India, visit voters.eci.gov.in. You'll need Form 6, a passport-sized photo, and proof of age/address. For the US, visit vote.gov to register online or by mail.",
-                "source": "static_intent",
-            },
-        )
+    # Step 5: Dynamic logic (Eligibility, Checklist, Election Info)
+    extra_data, context = _handle_dynamic_logic(intent, data, country)
 
-    if intent == "voter_checklist":
-        return build_response(
-            success=True,
-            data={
-                "reply": "Voter Checklist: 1. Ensure you're 18+. 2. Register on the electoral roll at voters.eci.gov.in. 3. Find your polling booth using the 'Voter Helpline' app. 4. Bring your EPIC card or a valid ID card on election day.",
-                "source": "static_intent",
-            },
-        )
-
-    if intent == "eligibility":
-        age = validate_age(data.get("age", ""))
-        if age is not None:
-            elig_result = eligibility.check(age, country=country)
-            extra_data["eligibility"] = elig_result.get("data", {})
-        else:
-            return build_response(
-                success=True,
-                data={
-                    "reply": "In India and the US, you are eligible to vote if you are a citizen of your country and are at least 18 years of age or older on the qualifying date.",
-                    "source": "static_intent",
-                },
-            )
-
-    elif intent == "checklist":
-        status = sanitize_text(data.get("status", "unregistered"))
-        checklist_result = checklist.generate(status)
-        extra_data["checklist"] = checklist_result.get("data", {})
-
-    elif intent == "election_info":
-        if country == "india":
-            state = sanitize_text(data.get("state", ""))
-            civic_result = get_india_election_info(state or None)
-        else:
-            civic_result = civic_api.get_election_info(address or None)
-        context = civic_result.get("data", {})
-        extra_data["election_info"] = context
-
-    # --- Step 5: AI response (country-aware) ---
+    # Step 6: AI response
     ai_result = gemini_logic.chat(message, context=context, country=country)
     reply = ai_result.get("data", {}).get("reply", "")
 
-    # --- Step 6: Calendar trigger (FORCED if election date is in context) ---
+    # Step 7: Calendar logic (If requested)
     calendar_added = False
     election_day = context.get("election_day", "")
-    if election_day and data.get("add_reminder", False):
-        cal_result = _add_calendar_reminder(
-            election_day=election_day,
-            election_name=context.get("election_name", "Election Day"),
-        )
-        calendar_added = cal_result.get("success", False)
+    if election_day and data.get("add_reminder"):
+        cal_res = _add_calendar_reminder(election_day, context.get("election_name", "Election"), data.get("token"))
+        calendar_added = cal_res.get("success", False)
 
-    # --- Step 7: Build final response ---
+    # Step 8: Final Build
     return build_response(
         success=True,
         data={
@@ -151,8 +80,73 @@ def process_chat(data: Dict[str, Any]) -> Dict[str, Any]:
             "calendar_added": calendar_added,
             "election_day": election_day,
             **extra_data,
+            "source": ai_result.get("source", "gemini"),
         },
     )
+
+
+def _validate_chat_input(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Validate raw chat input."""
+    message = sanitize_text(data.get("message", ""))
+    if not message:
+        return build_response(success=False, error="Message cannot be empty.")
+    if not validate_payload_size(message):
+        return build_response(
+            success=False,
+            error="Message is too long. Please keep your question under 500 characters.",
+        )
+    return None
+
+
+def _handle_jailbreak(country: str) -> Dict[str, Any]:
+    """Handle detected jailbreak attempts."""
+    logger.warning("Jailbreak attempt blocked")
+    guide = country.capitalize()
+    return build_response(
+        success=True,
+        data={
+            "reply": f"I'm here to help with {guide} election questions only.",
+            "source": "security_filter",
+        },
+    )
+
+
+def _handle_static_intents(intent: str, message: str, country: str) -> Optional[Dict[str, Any]]:
+    """Handle intents that have predefined static answers."""
+    responses = {
+        "voter_registration": "To register in India, visit voters.eci.gov.in. For the US, visit vote.gov.",
+        "voter_checklist": "Checklist: 1. Ensure you're 18+. 2. Register at voters.eci.gov.in. 3. Find booth on 'Voter Helpline'.",
+    }
+    if intent in responses:
+        return build_response(
+            success=True,
+            data={"reply": responses[intent], "source": "static_intent"},
+        )
+    return None
+
+
+def _handle_dynamic_logic(intent: str, data: Dict[str, Any], country: str) -> tuple[Dict[str, Any], Dict[str, Any]]:
+    """Handle logic that requires external API calls or user data processing."""
+    extra_data = {}
+    context = {}
+
+    if intent == "eligibility":
+        age = validate_age(data.get("age", ""))
+        if age is not None:
+            extra_data["eligibility"] = eligibility.check(age, country=country).get("data", {})
+    elif intent == "checklist":
+        status = sanitize_text(data.get("status", "unregistered"))
+        extra_data["checklist"] = checklist.generate(status).get("data", {})
+    elif intent == "election_info":
+        if country == "india":
+            state = sanitize_text(data.get("state", ""))
+            context = get_india_election_info(state or None).get("data", {})
+        else:
+            address = sanitize_text(data.get("address", ""))
+            context = civic_api.get_election_info(address or None).get("data", {})
+        extra_data["election_info"] = context
+
+    return extra_data, context
 
 
 def check_eligibility(data: Dict[str, Any]) -> Dict[str, Any]:

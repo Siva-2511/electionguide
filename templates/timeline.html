@@ -60,6 +60,12 @@
         <a href="/timeline?country=australia" class="btn btn-sm {% if country=='australia' %}btn-primary{% else %}btn-outline{% endif %}" aria-label="Australia Timeline">🇦🇺</a>
         <a href="/timeline?country=canada" class="btn btn-sm {% if country=='canada' %}btn-primary{% else %}btn-outline{% endif %}" aria-label="Canada Timeline">🇨🇦</a>
       </div>
+      {% if user %}
+      <div class="user-badge" style="margin-left: 8px;">
+        <img src="{{ user.picture }}" alt="User profile" class="user-avatar" width="24" height="24" style="border-radius:50%" />
+        <a href="/logout" class="btn btn-outline btn-sm" id="btn-logout" aria-label="Sign out">Logout</a>
+      </div>
+      {% endif %}
     </div>
   </nav>
   </header>
