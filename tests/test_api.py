@@ -3,8 +3,9 @@ tests/test_api.py
 Tests for services/civic_api.py
 Covers: success, mock fallback, caching, contract enforcement.
 """
+
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from services import civic_api
 
 
@@ -80,14 +81,18 @@ class TestCalendarIntegration:
     def test_calendar_event_structure(self):
         from orchestrator import _add_calendar_reminder
         from unittest.mock import patch, MagicMock
-        
+
         with patch("orchestrator.build_service") as mock_build:
             mock_service = MagicMock()
             mock_build.return_value = mock_service
-            mock_service.events().insert().execute.return_value = {"htmlLink": "https://calendar.google.com/event"}
-            
-            result = _add_calendar_reminder("2026-11-03", "US General Election", token="dummy-token")
-            
+            mock_service.events().insert().execute.return_value = {
+                "htmlLink": "https://calendar.google.com/event"
+            }
+
+            result = _add_calendar_reminder(
+                "2026-11-03", "US General Election", token="dummy-token"
+            )
+
         assert result["success"] is True
         assert "event" in result["data"]
         event = result["data"]["event"]
@@ -97,10 +102,12 @@ class TestCalendarIntegration:
     def test_calendar_returns_contract(self):
         from orchestrator import _add_calendar_reminder
         from unittest.mock import patch
-        
+
         with patch("orchestrator.build_service"):
-            result = _add_calendar_reminder("2026-11-03", "Test Election", token="dummy-token")
-        
+            result = _add_calendar_reminder(
+                "2026-11-03", "Test Election", token="dummy-token"
+            )
+
         assert "success" in result
         assert "data" in result
         assert "error" in result

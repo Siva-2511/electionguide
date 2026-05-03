@@ -32,7 +32,7 @@ _MAX_RETRIES = 1
 _FAILURE_THRESHOLD = 3
 _FAILURE_COOLDOWN = 15
 _DISCOVERY_CACHE_TTL = 600  # 10 Minutes
-_MODEL_HEALTH_TTL = 300     # 5 Minutes
+_MODEL_HEALTH_TTL = 300  # 5 Minutes
 
 # Global Resilience State
 _consecutive_failures = 0
@@ -41,7 +41,7 @@ _resiliency_lock = threading.Lock()
 
 # Discovery & Health Cache
 _model_list_cache = {"data": None, "time": 0}
-_model_health = {} # {model_name: last_fail_time}
+_model_health = {}  # {model_name: last_fail_time}
 
 _executor = ThreadPoolExecutor(max_workers=4)
 atexit.register(lambda: _executor.shutdown(wait=False))
@@ -53,7 +53,7 @@ STABLE_MODELS = [
     "gemini-2.0-flash",
     "gemini-2.0-flash-lite",
     "gemini-1.5-flash",
-    "gemini-1.5-pro"
+    "gemini-1.5-pro",
 ]
 
 # -----------------------
@@ -83,13 +83,19 @@ SYSTEM_PROMPTS = {
 _cache: OrderedDict[str, Dict[str, Any]] = OrderedDict()
 _cache_lock = threading.Lock()
 
+
 # -----------------------
 # Client
 # -----------------------
 def _get_client() -> Optional[genai.Client]:
-    """Initialize and return the Gemini client if API key is present."""
+    """Initialize and return the Gemini client if API key is present.
+
+    Returns:
+        Optional[genai.Client]: The initialized Gemini client or None if API key is missing.
+    """
     api_key = os.getenv("GEMINI_API_KEY")
     return genai.Client(api_key=api_key) if api_key else None
+
 
 # -----------------------
 # Discovery (Cached & Health-Aware)
@@ -97,21 +103,27 @@ def _get_client() -> Optional[genai.Client]:
 def _get_resilient_models(client: genai.Client) -> List[str]:
     """
     Discover available models, caching the results, and filtering out unhealthy ones.
-    
+
     Args:
         client (genai.Client): The initialized Gemini client.
-        
+
     Returns:
         List[str]: A list of healthy model names prioritized for fallback.
     """
-    global _model_list_cache
     now = time.time()
-    
+
     # 1. Update Discovery Cache if stale
-    if now - _model_list_cache["time"] > _DISCOVERY_CACHE_TTL or not _model_list_cache["data"]:
+    if (
+        now - _model_list_cache["time"] > _DISCOVERY_CACHE_TTL
+        or not _model_list_cache["data"]
+    ):
         try:
             listed = client.models.list() or []
-            found = [m.name.replace("models/", "") for m in listed if "flash" in m.name.lower()]
+            found = [
+                m.name.replace("models/", "")
+                for m in listed
+                if "flash" in m.name.lower()
+            ]
             _model_list_cache["data"] = list(dict.fromkeys(STABLE_MODELS + found))
             _model_list_cache["time"] = now
             logger.info("Model discovery cache refreshed.")
@@ -127,14 +139,22 @@ def _get_resilient_models(client: genai.Client) -> List[str]:
             last_fail = _model_health.get(m, 0)
             if now - last_fail > _MODEL_HEALTH_TTL:
                 healthy_models.append(m)
-        
-        return healthy_models or STABLE_MODELS[:2] # Always try at least some
+
+        return healthy_models or STABLE_MODELS[:2]  # Always try at least some
+
 
 # -----------------------
 # Extraction & Filters
 # -----------------------
 def _extract_text(resp: Any) -> str:
-    """Safely extract text content from a Gemini response object."""
+    """Safely extract text content from a Gemini response object.
+
+    Args:
+        resp (Any): The raw response object from the Gemini API.
+
+    Returns:
+        str: The extracted text or an empty string if extraction fails.
+    """
     try:
         if getattr(resp, "text", None):
             return resp.text
@@ -147,22 +167,28 @@ def _extract_text(resp: Any) -> str:
         pass
     return ""
 
+
 def filter_output(text: str, country: str = "us") -> str:
     """
     Filter out unsafe or highly partisan phrasing from model outputs.
-    
+
     Args:
         text (str): The raw output from the AI.
         country (str): The country context for appropriate fallback messages.
-        
+
     Returns:
         str: Cleaned text or a safe fallback string.
     """
-    if not text: return ""
+    if not text:
+        return ""
     patterns = [
-        r"\byou should vote for\b", r"\bbest candidate\b", r"\bbest choice\b",
-        r"\bthe winner will be\b", r"\bsupport the \w+ party\b",
-        r"\byou must choose\b", r"\bvote for candidate\b",
+        r"\byou should vote for\b",
+        r"\bbest candidate\b",
+        r"\bbest choice\b",
+        r"\bthe winner will be\b",
+        r"\bsupport the \w+ party\b",
+        r"\byou must choose\b",
+        r"\bvote for candidate\b",
     ]
     for p in patterns:
         if re.search(p, text, re.IGNORECASE):
@@ -170,30 +196,44 @@ def filter_output(text: str, country: str = "us") -> str:
             return FALLBACKS.get(country, SAFE_FALLBACK)
     return text
 
+
 def enforce_readability(text: str) -> str:
     """
     Ensure the response is snappy and formatted as bullets if too long.
-    
+
     Args:
         text (str): The AI output text.
-        
+
     Returns:
         str: Formatted readable text.
     """
-    if not text: return ""
+    if not text:
+        return ""
     text = re.sub(r"\s+", " ", text).strip()
     sentences = re.split(r"(?<=[.!?])\s+", text)
     if len(sentences) > 5:
         return "\n".join(f"• {s.strip()}" for s in sentences[:7] if s.strip())
     return text
 
+
 # -----------------------
 # SMART EXECUTION
 # -----------------------
-def _call_gemini_smart(client: genai.Client, model: str, prompt: str, system_instruction: str) -> Any:
+def _call_gemini_smart(
+    client: genai.Client, model: str, prompt: str, system_instruction: str
+) -> Any:
+    """Execute a Gemini call with timeout and basic retry logic.
+
+    Args:
+        client (genai.Client): The initialized Gemini client.
+        model (str): The name of the model to use.
+        prompt (str): The user prompt.
+        system_instruction (str): The system prompt/instructions for the model.
+
+    Returns:
+        Any: The generated response object.
     """
-    Execute a Gemini call with timeout and basic retry logic.
-    """
+
     def task():
         return client.models.generate_content(
             model=model,
@@ -220,27 +260,31 @@ def _call_gemini_smart(client: genai.Client, model: str, prompt: str, system_ins
                 time.sleep(2 * (attempt + 1))
             else:
                 logger.info("Error: %s (%s)", model, type(e).__name__)
-        if attempt < _MAX_RETRIES: time.sleep(1)
+        if attempt < _MAX_RETRIES:
+            time.sleep(1)
 
     raise Exception("MODEL_FAILED")
+
 
 # -----------------------
 # MAIN CHAT
 # -----------------------
-def chat(message: str, context: Optional[Dict[str, Any]] = None, country: str = "us") -> Dict[str, Any]:
+def chat(
+    message: str, context: Optional[Dict[str, Any]] = None, country: str = "us"
+) -> Dict[str, Any]:
     """
     Main orchestration point for intelligent chat handling.
     Implements caching, resilient failovers, and safety filtering.
-    
+
     Args:
         message (str): The user's input message.
         context (Optional[Dict[str, Any]]): Background data (e.g., election dates) for grounding.
         country (str): The active country mode.
-        
+
     Returns:
         Dict[str, Any]: The finalized API response payload.
     """
-    global _consecutive_failures, _last_total_failure_time, _model_health
+    global _consecutive_failures, _last_total_failure_time
     start_time = time.time()
     raw = (message or "").strip()
     country = (country or "us").lower()
@@ -253,12 +297,16 @@ def chat(message: str, context: Optional[Dict[str, Any]] = None, country: str = 
     with _resiliency_lock:
         if _consecutive_failures >= _FAILURE_THRESHOLD:
             if time.time() - _last_total_failure_time < _FAILURE_COOLDOWN:
-                return build_response(True, {"reply": fallback, "source": "circuit_breaker"})
+                return build_response(
+                    True, {"reply": fallback, "source": "circuit_breaker"}
+                )
             _consecutive_failures = 0
 
     normalized = " ".join(raw.lower().split())
     ctx_id = context.get("election_day") if context else ""
-    cache_key = hashlib.md5(f"{CACHE_VERSION}:{country}:{normalized}:{ctx_id}".encode()).hexdigest()
+    cache_key = hashlib.md5(
+        f"{CACHE_VERSION}:{country}:{normalized}:{ctx_id}".encode()
+    ).hexdigest()
 
     # 1. Cache Read
     with _cache_lock:
@@ -267,7 +315,8 @@ def chat(message: str, context: Optional[Dict[str, Any]] = None, country: str = 
             return build_response(True, _cache[cache_key].copy())
 
     client = _get_client()
-    if not client: return build_response(True, {"reply": fallback, "source": "fallback"})
+    if not client:
+        return build_response(True, {"reply": fallback, "source": "fallback"})
 
     prompt = raw
     if context and context.get("election_day"):
@@ -277,24 +326,32 @@ def chat(message: str, context: Optional[Dict[str, Any]] = None, country: str = 
     models = _get_resilient_models(client)
     for model in models:
         try:
-            resp = _call_gemini_smart(client, model, prompt, SYSTEM_PROMPTS.get(country, SYSTEM_PROMPTS["us"]))
+            resp = _call_gemini_smart(
+                client, model, prompt, SYSTEM_PROMPTS.get(country, SYSTEM_PROMPTS["us"])
+            )
             text = _extract_text(resp)
-            
+
             if text and text.strip():
-                result = {"reply": enforce_readability(filter_output(text, country)), "source": f"gemini:{model}"}
-                
-                with _resiliency_lock: _consecutive_failures = 0
+                result = {
+                    "reply": enforce_readability(filter_output(text, country)),
+                    "source": f"gemini:{model}",
+                }
+
+                with _resiliency_lock:
+                    _consecutive_failures = 0
                 with _cache_lock:
                     _cache[cache_key] = result.copy()
                     _cache.move_to_end(cache_key)
-                    if len(_cache) > _CACHE_MAX: _cache.popitem(last=False)
+                    if len(_cache) > _CACHE_MAX:
+                        _cache.popitem(last=False)
 
                 logger.info("Success: %s (%.2fs)", model, time.time() - start_time)
                 return build_response(True, result)
 
         except Exception as e:
             if str(e) != "MODEL_NOT_FOUND":
-                with _resiliency_lock: _model_health[model] = time.time()
+                with _resiliency_lock:
+                    _model_health[model] = time.time()
             logger.info("Failover: %s (%s)", model, str(e))
             continue
 
@@ -302,8 +359,9 @@ def chat(message: str, context: Optional[Dict[str, Any]] = None, country: str = 
     with _resiliency_lock:
         _consecutive_failures += 1
         _last_total_failure_time = time.time()
-    
+
     return build_response(True, {"reply": fallback, "source": "total_failure"})
+
 
 # -----------------------
 # INTENT DETECTION
@@ -311,15 +369,18 @@ def chat(message: str, context: Optional[Dict[str, Any]] = None, country: str = 
 def detect_intent(message: str) -> Dict[str, Any]:
     """
     Fast, deterministic intent detection based on keywords.
-    
+
     Args:
         message (str): The raw user message.
-        
+
     Returns:
         Dict[str, Any]: The detected intent and confidence level.
     """
     msg = (message or "").lower()
-    if "register" in msg: return {"intent": "voter_registration", "confidence": "high"}
-    if "how" in msg or "steps" in msg: return {"intent": "voter_checklist", "confidence": "medium"}
-    if "vote" in msg or "eligible" in msg: return {"intent": "eligibility", "confidence": "high"}
+    if "register" in msg:
+        return {"intent": "voter_registration", "confidence": "high"}
+    if "how" in msg or "steps" in msg:
+        return {"intent": "voter_checklist", "confidence": "medium"}
+    if "vote" in msg or "eligible" in msg:
+        return {"intent": "eligibility", "confidence": "high"}
     return {"intent": "general", "confidence": "low"}

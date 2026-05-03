@@ -12,10 +12,11 @@
   <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body class="country-india">
-  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#main-content" class="skip-nav">Skip to main content</a>
 
-  <!-- ── Navbar ── -->
-  <nav class="navbar" role="navigation" aria-label="Main navigation">
+  <!-- ── Header & Navbar ── -->
+  <header>
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
     <div class="nav-brand">
       <span class="nav-logo" aria-hidden="true">🗳️</span>
       <span class="nav-title">ElectionGuide</span>
@@ -79,10 +80,11 @@
           <a href="/logout" class="btn btn-outline btn-sm" id="btn-logout">Logout</a>
         </div>
       {% else %}
-        <a href="/login" class="btn btn-primary btn-sm" id="btn-login">🔐 Sign in</a>
+        <a href="/login" class="btn btn-primary btn-sm" id="btn-login" aria-label="Sign in">🔐 Sign in</a>
       {% endif %}
     </div>
-  </nav>
+    </nav>
+  </header>
 
   <!-- Mobile nav overlay -->
   <div class="nav-mobile-menu hidden" id="nav-mobile-menu" role="menu">
@@ -109,7 +111,7 @@
   </div>
 
   <!-- ── Main Layout ── -->
-  <main id="main-content" class="main-layout">
+  <main id="main-content" class="main-layout" role="main">
 
     <!-- Left Panel -->
     <aside class="side-panel" aria-label="Tools panel">
@@ -122,7 +124,7 @@
           <div class="form-group">
             <label for="age-input" class="form-label">Your Age</label>
             <input type="number" id="age-input" min="0" max="120" placeholder="e.g. 21"
-              class="form-input" aria-required="true" aria-describedby="age-hint" />
+              class="form-input" aria-required="true" aria-describedby="age-hint" aria-label="Enter your age" />
             <small id="age-hint" class="form-hint">Enter a number 0–120</small>
           </div>
           <div class="form-group" id="citizen-group">
@@ -133,7 +135,7 @@
               <label class="radio-label"><input type="radio" name="citizen" value="no" id="citizen-no" aria-label="No, I am not a citizen" /> No</label>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary btn-full" id="btn-check-eligibility">✅ Check Eligibility</button>
+          <button type="submit" class="btn btn-primary btn-full" id="btn-check-eligibility" aria-label="Check voting eligibility">✅ Check Eligibility</button>
         </form>
         <div id="eligibility-result" class="result-box hidden" role="alert" aria-live="polite"></div>
       </section>
@@ -149,7 +151,7 @@
             <option value="returning">Returning voter</option>
           </select>
         </div>
-        <button class="btn btn-secondary btn-full" id="btn-get-checklist">📋 Get My Checklist</button>
+        <button class="btn btn-secondary btn-full" id="btn-get-checklist" aria-label="Get my checklist">📋 Get My Checklist</button>
         <div id="checklist-result" class="checklist-container hidden" aria-live="polite"></div>
       </section>
 
@@ -157,7 +159,7 @@
       <section class="card" aria-labelledby="reminder-heading">
         <h2 id="reminder-heading" class="card-title">📅 Election Reminder</h2>
         <p class="card-desc">Add Election Day to Google Calendar.</p>
-        <button class="btn btn-accent btn-full" id="btn-add-reminder">📅 Add to Google Calendar</button>
+        <button class="btn btn-accent btn-full" id="btn-add-reminder" aria-label="Add Election Day to Google Calendar">📅 Add to Google Calendar</button>
         <div id="reminder-result" class="result-box hidden" role="alert" aria-live="polite"></div>
       </section>
 
@@ -174,7 +176,7 @@
       <div class="chat-header">
         <div class="chat-header-top">
           <h1 id="chat-heading" class="chat-title">🗳️ ElectionGuide Assistant</h1>
-          <a href="/timeline?country=india" class="btn btn-sm btn-outline-white" id="btn-view-timeline">📅 Timeline</a>
+          <a href="/timeline?country=india" class="btn btn-sm btn-outline-white" id="btn-view-timeline" aria-label="View Election Timeline">📅 Timeline</a>
         </div>
         <p class="chat-subtitle" id="chat-subtitle">வணக்கம்! Namaste! 🙏 Helping you navigate Indian elections.</p>
         <div class="chat-status-bar">

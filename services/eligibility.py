@@ -3,6 +3,8 @@ services/eligibility.py
 Pure deterministic voting eligibility logic — supports India, US, UK, Australia, Canada.
 ZERO AI calls. ZERO network calls. Always returns build_response() schema.
 """
+
+from typing import Dict, Any, Optional
 from utils.response import build_response
 from utils.response_guard import enforce_schema
 
@@ -58,15 +60,31 @@ COUNTRY_CONFIG = {
 }
 
 
-def _get_config(country: str) -> dict:
+def _get_config(country: str) -> Dict[str, Any]:
+    """Get the country-specific text configuration.
+
+    Args:
+        country (str): The country code.
+
+    Returns:
+        Dict[str, Any]: The configuration dictionary for the country.
+    """
     return COUNTRY_CONFIG.get(country.lower(), COUNTRY_CONFIG["us"])
 
 
 @enforce_schema
-def check(age, citizen: bool = True, country: str = "us") -> dict:
-    """
-    Determine voting eligibility based on age, citizenship, and country.
+def check(age: Any, citizen: bool = True, country: str = "us") -> Dict[str, Any]:
+    """Determine voting eligibility based on age, citizenship, and country.
+
     Pure deterministic — no AI, no network calls.
+
+    Args:
+        age (Any): The user's age.
+        citizen (bool): Whether the user is a citizen. Defaults to True.
+        country (str): The country code. Defaults to "us".
+
+    Returns:
+        Dict[str, Any]: build_response() schema containing eligibility results.
     """
     cfg = _get_config(country)
     validated_age = _parse_age(age)
@@ -74,7 +92,7 @@ def check(age, citizen: bool = True, country: str = "us") -> dict:
     if validated_age is None:
         return build_response(
             success=False,
-            error="Invalid age. Please provide a number between 0 and 120."
+            error="Invalid age. Please provide a number between 0 and 120.",
         )
 
     # Non-citizen check
@@ -87,7 +105,7 @@ def check(age, citizen: bool = True, country: str = "us") -> dict:
                 "next_step": cfg["not_citizen_step"],
                 "age_checked": validated_age,
                 "country": country,
-            }
+            },
         )
 
     # Under 17 (too young even to pre-register in most countries)
@@ -100,7 +118,7 @@ def check(age, citizen: bool = True, country: str = "us") -> dict:
                 "next_step": "Keep learning about elections — every future voter matters!",
                 "age_checked": validated_age,
                 "country": country,
-            }
+            },
         )
 
     # Age 17 (special case — pre-registration in some countries)
@@ -115,7 +133,7 @@ def check(age, citizen: bool = True, country: str = "us") -> dict:
                 "age_checked": validated_age,
                 "can_preregister": bool(cfg.get("preregister_note")),
                 "country": country,
-            }
+            },
         )
 
     # Exactly 18 — first-time voter
@@ -129,7 +147,7 @@ def check(age, citizen: bool = True, country: str = "us") -> dict:
                 "age_checked": validated_age,
                 "first_time_voter": True,
                 "country": country,
-            }
+            },
         )
 
     # Standard eligible adult
@@ -142,12 +160,19 @@ def check(age, citizen: bool = True, country: str = "us") -> dict:
             "age_checked": validated_age,
             "first_time_voter": False,
             "country": country,
-        }
+        },
     )
 
 
-def _parse_age(age) -> int | None:
-    """Safely parse age to integer. Returns None for invalid inputs."""
+def _parse_age(age: Any) -> Optional[int]:
+    """Safely parse age to integer.
+
+    Args:
+        age (Any): The age input to parse.
+
+    Returns:
+        Optional[int]: The parsed integer age or None for invalid inputs.
+    """
     try:
         age_int = int(age)
         if age_int < 0 or age_int > 120:

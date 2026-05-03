@@ -3,9 +3,10 @@ services/world_elections.py
 Basic election info for UK, Australia, Canada.
 All returns build_response() schema. Zero network calls — static structured data.
 """
+
+from typing import Dict, Any
 from utils.response import build_response
 from utils.response_guard import enforce_schema
-
 
 WORLD_DATA = {
     "uk": {
@@ -33,7 +34,7 @@ WORLD_DATA = {
             "electoral_commission": "https://www.electoralcommission.org.uk",
         },
         "source": "electoral_commission_mock",
-        "note": "Based on UK Electoral Commission 2024 data. Visit electoralcommission.org.uk for latest info."
+        "note": "Based on UK Electoral Commission 2024 data. Visit electoralcommission.org.uk for latest info.",
     },
     "australia": {
         "country": "Australia",
@@ -53,14 +54,17 @@ WORLD_DATA = {
         "id_required": "No photo ID required — enrolled voters confirmed by name/address",
         "voting_hours": "8:00 AM – 6:00 PM",
         "fine_for_not_voting": "AUD $20 (voting is compulsory)",
-        "next_election": {"type": "Australian Federal Election", "expected_year": "2028"},
+        "next_election": {
+            "type": "Australian Federal Election",
+            "expected_year": "2028",
+        },
         "useful_links": {
             "enrol": "https://www.aec.gov.au/Enrolment/",
             "find_polling_place": "https://www.aec.gov.au/election/pollingplaces.htm",
             "aec_website": "https://www.aec.gov.au",
         },
         "source": "aec_mock",
-        "note": "Based on AEC 2025 data. Visit aec.gov.au for latest info."
+        "note": "Based on AEC 2025 data. Visit aec.gov.au for latest info.",
     },
     "canada": {
         "country": "Canada",
@@ -85,21 +89,27 @@ WORLD_DATA = {
             "elections_canada": "https://www.elections.ca",
         },
         "source": "elections_canada_mock",
-        "note": "Based on Elections Canada 2025 data. Visit elections.ca for latest info."
-    }
+        "note": "Based on Elections Canada 2025 data. Visit elections.ca for latest info.",
+    },
 }
 
 
 @enforce_schema
-def get_world_election_info(country_code: str) -> dict:
-    """
-    Returns election info for UK, Australia, or Canada.
+def get_world_election_info(country_code: str) -> Dict[str, Any]:
+    """Returns election info for UK, Australia, or Canada.
+
     Pure static data — zero network calls, zero AI.
+
+    Args:
+        country_code (str): The country code (uk, australia, canada).
+
+    Returns:
+        Dict[str, Any]: build_response() schema with election data.
     """
     code = country_code.lower().strip()
     if code not in WORLD_DATA:
         return build_response(
             success=False,
-            error=f"Country '{country_code}' not supported. Available: uk, australia, canada"
+            error=f"Country '{country_code}' not supported. Available: uk, australia, canada",
         )
     return build_response(success=True, data=WORLD_DATA[code])

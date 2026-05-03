@@ -35,10 +35,25 @@ a{color:var(--c-active);text-decoration:none}
 a:hover{text-decoration:underline}
 
 /* ── Accessibility ── */
-.skip-link{position:absolute;top:-44px;left:0;background:var(--c-active);color:#fff;padding:10px 16px;border-radius:0 0 var(--r-md) 0;z-index:9999;font-weight:600;transition:top .2s}
-.skip-link:focus{top:0}
+.skip-nav {
+  position: absolute;
+  left: -9999px;
+}
+.skip-nav:focus {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: #6366f1;
+  color: white;
+}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
 *:focus-visible{outline:3px solid var(--c-active);outline-offset:2px;border-radius:var(--r-sm)}
+button:focus, input:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
 
 /* ── Navbar ── */
 .navbar{

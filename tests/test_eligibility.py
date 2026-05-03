@@ -3,7 +3,7 @@ tests/test_eligibility.py
 Tests for services/eligibility.py
 Covers: age boundaries, citizenship, invalid input, and contract enforcement.
 """
-import pytest
+
 from services import eligibility
 
 

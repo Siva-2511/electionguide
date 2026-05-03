@@ -4,8 +4,8 @@ System boundary enforcement tests.
 Proves that deterministic services NEVER call AI or make network requests.
 This is the most critical test file for achieving 97%+ evaluation scores.
 """
-import pytest
-from unittest.mock import patch, MagicMock, call
+
+from unittest.mock import patch
 from services import eligibility, checklist
 
 
@@ -67,7 +67,6 @@ class TestResponseGuard:
 
     def test_guard_wraps_plain_dict(self):
         from utils.response_guard import enforce_schema
-        from utils.response import build_response
 
         @enforce_schema
         def bad_service():

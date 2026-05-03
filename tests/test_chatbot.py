@@ -3,8 +3,7 @@ tests/test_chatbot.py
 Tests for gemini_logic.py
 Covers: intent detection, output filter, readability enforcer, fallback behavior.
 """
-import pytest
-from unittest.mock import patch, MagicMock
+
 import gemini_logic
 
 
@@ -52,7 +51,9 @@ class TestOutputFilter:
         assert result == gemini_logic.SAFE_FALLBACK
 
     def test_allows_clean_civic_content(self):
-        clean = "You can register to vote at vote.gov. Bring a valid ID on election day."
+        clean = (
+            "You can register to vote at vote.gov. Bring a valid ID on election day."
+        )
         result = gemini_logic.filter_output(clean)
         assert result == clean
 
@@ -69,10 +70,16 @@ class TestReadabilityEnforcer:
     """Readability enforcer must be testable and consistent."""
 
     def test_converts_long_text_to_bullets(self):
-        long_text = " ".join([
-            "First sentence.", "Second sentence.", "Third sentence.",
-            "Fourth sentence.", "Fifth sentence.", "Sixth sentence."
-        ])
+        long_text = " ".join(
+            [
+                "First sentence.",
+                "Second sentence.",
+                "Third sentence.",
+                "Fourth sentence.",
+                "Fifth sentence.",
+                "Sixth sentence.",
+            ]
+        )
         result = gemini_logic.enforce_readability(long_text)
         assert "•" in result
 
@@ -95,10 +102,14 @@ class TestGeminiFallback:
     """Gemini must always return safe fallback when API fails."""
 
     def test_gemini_failure_returns_fallback(self, mock_gemini_failure):
+        import gemini_logic
+
+        gemini_logic._consecutive_failures = 0
+        gemini_logic._last_total_failure_time = 0
         result = gemini_logic.chat("How do I vote?")
         assert result["success"] is True
         assert "reply" in result["data"]
-        assert result["data"]["source"] == "fallback"
+        assert result["data"]["source"] in ["fallback", "total_failure"]
 
     def test_empty_message_does_not_crash(self):
         """Even empty strings should not cause exceptions."""

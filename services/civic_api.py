@@ -4,6 +4,7 @@ Google Civic Information API wrapper.
 Features: 6-hour TTL cache, request deduplication, graceful mock fallback.
 ALWAYS returns build_response() schema.
 """
+
 import os
 import time
 import logging
@@ -33,32 +34,32 @@ MOCK_CIVIC_DATA = {
         {
             "name": "Central Public Library",
             "address": "123 Main Street, Washington DC 20001",
-            "hours": "6:00 AM – 9:00 PM"
+            "hours": "6:00 AM – 9:00 PM",
         },
         {
             "name": "Community Recreation Center",
             "address": "456 Oak Avenue, Washington DC 20002",
-            "hours": "6:00 AM – 9:00 PM"
-        }
+            "hours": "6:00 AM – 9:00 PM",
+        },
     ],
     "early_voting": "October 22 – November 1, 2026",
     "absentee_info": "Request your absentee ballot by October 27, 2026.",
     "source": "mock_data",
-    "note": "Using default US election data. Enter your address for local info."
+    "note": "Using default US election data. Enter your address for local info.",
 }
 
 
 @enforce_schema
 def get_election_info(address: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Fetch election information for a given address.
+    """Fetch election information for a given address.
+
     Falls back to mock data gracefully if API is unavailable.
 
     Args:
-        address: Street address for localized election info (optional)
+        address (Optional[str]): Street address for localized election info. Defaults to None.
 
     Returns:
-        build_response() with election data
+        Dict[str, Any]: build_response() schema with election data.
     """
     cache_key = (address or "default").strip().lower()
 
@@ -89,12 +90,12 @@ def get_election_info(address: Optional[str] = None) -> Dict[str, Any]:
         params = {
             "key": api_key,
             "address": address or "Washington DC",
-            "electionId": "2000"  # Use general upcoming election
+            "electionId": "2000",  # Use general upcoming election
         }
         response = requests.get(
             "https://www.googleapis.com/civicinfo/v2/voterinfo",
             params=params,
-            timeout=5
+            timeout=5,
         )
 
         if response.status_code == 200:
@@ -115,27 +116,38 @@ def get_election_info(address: Optional[str] = None) -> Dict[str, Any]:
 
 
 def _parse_civic_response(raw: Dict[str, Any]) -> Dict[str, Any]:
-    """Parse Google Civic API response into our standard structure."""
+    """Parse Google Civic API response into our standard structure.
+
+    Args:
+        raw (Dict[str, Any]): Raw JSON response from the Google Civic API.
+
+    Returns:
+        Dict[str, Any]: A parsed and standardized dictionary of election data.
+    """
     election = raw.get("election", {})
     polling = raw.get("pollingLocations", [])
 
     locations = []
     for loc in polling[:3]:  # Limit to 3 locations
         address = loc.get("address", {})
-        locations.append({
-            "name": loc.get("address", {}).get("locationName", "Polling Location"),
-            "address": f"{address.get('line1', '')}, {address.get('city', '')}, {address.get('state', '')}",
-            "hours": loc.get("pollingHours", "6:00 AM – 8:00 PM")
-        })
+        locations.append(
+            {
+                "name": loc.get("address", {}).get("locationName", "Polling Location"),
+                "address": f"{address.get('line1', '')}, {address.get('city', '')}, {address.get('state', '')}",
+                "hours": loc.get("pollingHours", "6:00 AM – 8:00 PM"),
+            }
+        )
 
     return {
         "election_name": election.get("name", MOCK_CIVIC_DATA["election_name"]),
         "election_day": election.get("electionDay", MOCK_CIVIC_DATA["election_day"]),
-        "election_day_display": election.get("electionDay", MOCK_CIVIC_DATA["election_day_display"]),
+        "election_day_display": election.get(
+            "electionDay", MOCK_CIVIC_DATA["election_day_display"]
+        ),
         "polling_locations": locations or MOCK_CIVIC_DATA["polling_locations"],
         "polling_hours": "6:00 AM – 8:00 PM (local time)",
         "registration_deadline": MOCK_CIVIC_DATA["registration_deadline"],
         "early_voting": MOCK_CIVIC_DATA["early_voting"],
         "absentee_info": MOCK_CIVIC_DATA["absentee_info"],
-        "source": "google_civic_api"
+        "source": "google_civic_api",
     }

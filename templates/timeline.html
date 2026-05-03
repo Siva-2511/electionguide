@@ -27,8 +27,9 @@
   </style>
 </head>
 <body class="country-{{ country }}">
-  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#main-content" class="skip-nav">Skip to main content</a>
 
+  <header>
   <nav class="navbar" role="navigation" aria-label="Main navigation">
     <div class="nav-brand">
       <span class="nav-logo" aria-hidden="true">🗳️</span>
@@ -51,18 +52,19 @@
         </optgroup>
       </select>
       <div id="gte" style="display:none" aria-hidden="true"></div>
-      <a href="/" class="nav-link">← Assistant</a>
+      <a href="/" class="nav-link" aria-label="Back to Assistant">← Assistant</a>
       <div style="display:flex;gap:4px;flex-wrap:wrap">
-        <a href="/timeline?country=india" class="btn btn-sm {% if country=='india' %}btn-primary{% else %}btn-outline{% endif %}">🇮🇳</a>
-        <a href="/timeline?country=us"    class="btn btn-sm {% if country=='us'    %}btn-primary{% else %}btn-outline{% endif %}">🇺🇸</a>
-        <a href="/timeline?country=uk"    class="btn btn-sm {% if country=='uk'    %}btn-primary{% else %}btn-outline{% endif %}">🇬🇧</a>
-        <a href="/timeline?country=australia" class="btn btn-sm {% if country=='australia' %}btn-primary{% else %}btn-outline{% endif %}">🇦🇺</a>
-        <a href="/timeline?country=canada" class="btn btn-sm {% if country=='canada' %}btn-primary{% else %}btn-outline{% endif %}">🇨🇦</a>
+        <a href="/timeline?country=india" class="btn btn-sm {% if country=='india' %}btn-primary{% else %}btn-outline{% endif %}" aria-label="India Timeline">🇮🇳</a>
+        <a href="/timeline?country=us"    class="btn btn-sm {% if country=='us'    %}btn-primary{% else %}btn-outline{% endif %}" aria-label="US Timeline">🇺🇸</a>
+        <a href="/timeline?country=uk"    class="btn btn-sm {% if country=='uk'    %}btn-primary{% else %}btn-outline{% endif %}" aria-label="UK Timeline">🇬🇧</a>
+        <a href="/timeline?country=australia" class="btn btn-sm {% if country=='australia' %}btn-primary{% else %}btn-outline{% endif %}" aria-label="Australia Timeline">🇦🇺</a>
+        <a href="/timeline?country=canada" class="btn btn-sm {% if country=='canada' %}btn-primary{% else %}btn-outline{% endif %}" aria-label="Canada Timeline">🇨🇦</a>
       </div>
     </div>
   </nav>
+  </header>
 
-  <main id="main-content" class="timeline-layout">
+  <main id="main-content" class="timeline-layout" role="main">
     <header class="page-header">
       <h1 class="page-title">
         {% if country=='india' %}🇮🇳 {{ election.election_label }} 2026

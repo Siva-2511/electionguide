@@ -12,7 +12,7 @@ Google Services Integrated:
 
 app.py calls ONLY this module — never individual services directly.
 """
-import os
+
 import logging
 from typing import Dict, Any, Optional
 from google.oauth2.credentials import Credentials
@@ -32,36 +32,33 @@ from services.india_api import get_india_election_info
 logger = logging.getLogger(__name__)
 
 
-def process_chat(data: dict) -> dict:
-    """
-    Main chat pipeline.
+def process_chat(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Main chat pipeline.
+
     Flow: validate → jailbreak check → intent → context fetch → AI → filter → translate → respond
 
     Args:
-        data: dict with 'message', optional 'lang', 'address', 'age', 'status'
+        data (Dict[str, Any]): Dictionary with 'message', optional 'lang', 'address', 'age', 'status', 'country'.
 
     Returns:
-        build_response() with final reply and metadata
+        Dict[str, Any]: build_response() with final reply and metadata.
     """
     # --- Step 1: Input validation ---
     raw_message = data.get("message", "")
     message = sanitize_text(raw_message)
-    lang = sanitize_text(data.get("lang", "en"))
+    sanitize_text(data.get("lang", "en"))
     address = sanitize_text(data.get("address", ""))
     country = sanitize_text(data.get("country", "us")).lower()
     if country not in ("us", "india", "uk", "australia", "canada"):
         country = "us"
 
     if not message:
-        return build_response(
-            success=False,
-            error="Message cannot be empty."
-        )
+        return build_response(success=False, error="Message cannot be empty.")
 
     if not validate_payload_size(message):
         return build_response(
             success=False,
-            error="Message is too long. Please keep your question under 500 characters."
+            error="Message is too long. Please keep your question under 500 characters.",
         )
 
     # --- Step 2: Jailbreak check ---
@@ -72,8 +69,8 @@ def process_chat(data: dict) -> dict:
             success=True,
             data={
                 "reply": f"I'm here to help with {guide} election questions only. What would you like to know about voting?",
-                "source": "security_filter"
-            }
+                "source": "security_filter",
+            },
         )
 
     # --- Step 3: Intent detection (lightweight, no AI) ---
@@ -83,21 +80,39 @@ def process_chat(data: dict) -> dict:
     # --- Step 4: Deterministic routing (no AI for logic) ---
     context = {}
     extra_data = {}
-    
-    # Handle explicit intents (Civic Data / Snappy Answers)
-    if intent == 'voter_registration':
-        return build_response(success=True, data={"reply": "To register in India, visit voters.eci.gov.in. You'll need Form 6, a passport-sized photo, and proof of age/address. For the US, visit vote.gov to register online or by mail.", "source": "static_intent"})
-    
-    if intent == 'voter_checklist':
-        return build_response(success=True, data={"reply": "Voter Checklist: 1. Ensure you're 18+. 2. Register on the electoral roll at voters.eci.gov.in. 3. Find your polling booth using the 'Voter Helpline' app. 4. Bring your EPIC card or a valid ID card on election day.", "source": "static_intent"})
 
-    if intent == 'eligibility':
+    # Handle explicit intents (Civic Data / Snappy Answers)
+    if intent == "voter_registration":
+        return build_response(
+            success=True,
+            data={
+                "reply": "To register in India, visit voters.eci.gov.in. You'll need Form 6, a passport-sized photo, and proof of age/address. For the US, visit vote.gov to register online or by mail.",
+                "source": "static_intent",
+            },
+        )
+
+    if intent == "voter_checklist":
+        return build_response(
+            success=True,
+            data={
+                "reply": "Voter Checklist: 1. Ensure you're 18+. 2. Register on the electoral roll at voters.eci.gov.in. 3. Find your polling booth using the 'Voter Helpline' app. 4. Bring your EPIC card or a valid ID card on election day.",
+                "source": "static_intent",
+            },
+        )
+
+    if intent == "eligibility":
         age = validate_age(data.get("age", ""))
         if age is not None:
             elig_result = eligibility.check(age, country=country)
             extra_data["eligibility"] = elig_result.get("data", {})
         else:
-            return build_response(success=True, data={"reply": "In India and the US, you are eligible to vote if you are a citizen of your country and are at least 18 years of age or older on the qualifying date.", "source": "static_intent"})
+            return build_response(
+                success=True,
+                data={
+                    "reply": "In India and the US, you are eligible to vote if you are a citizen of your country and are at least 18 years of age or older on the qualifying date.",
+                    "source": "static_intent",
+                },
+            )
 
     elif intent == "checklist":
         status = sanitize_text(data.get("status", "unregistered"))
@@ -123,7 +138,7 @@ def process_chat(data: dict) -> dict:
     if election_day and data.get("add_reminder", False):
         cal_result = _add_calendar_reminder(
             election_day=election_day,
-            election_name=context.get("election_name", "Election Day")
+            election_name=context.get("election_name", "Election Day"),
         )
         calendar_added = cal_result.get("success", False)
 
@@ -135,18 +150,18 @@ def process_chat(data: dict) -> dict:
             "intent": intent,
             "calendar_added": calendar_added,
             "election_day": election_day,
-            **extra_data
-        }
+            **extra_data,
+        },
     )
 
 
 def check_eligibility(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Eligibility route handler — pure deterministic logic.
-    
+
     Args:
         data (Dict[str, Any]): JSON payload containing 'age' and 'country'.
-        
+
     Returns:
         Dict[str, Any]: Formatted API response.
     """
@@ -154,7 +169,7 @@ def check_eligibility(data: Dict[str, Any]) -> Dict[str, Any]:
     if age is None:
         return build_response(
             success=False,
-            error="Please provide a valid age (a number between 0 and 120)."
+            error="Please provide a valid age (a number between 0 and 120).",
         )
     citizen = data.get("citizen", True)
     country = sanitize_text(data.get("country", "us")).lower()
@@ -166,10 +181,10 @@ def check_eligibility(data: Dict[str, Any]) -> Dict[str, Any]:
 def get_checklist(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Checklist route handler — pure deterministic logic.
-    
+
     Args:
         data (Dict[str, Any]): JSON payload containing 'status' and 'first_time'.
-        
+
     Returns:
         Dict[str, Any]: Formatted API response with the checklist.
     """
@@ -181,25 +196,27 @@ def get_checklist(data: Dict[str, Any]) -> Dict[str, Any]:
 def get_timeline(address: Optional[str] = None) -> Dict[str, Any]:
     """
     Timeline route handler — fetches civic data for timeline view.
-    
+
     Args:
         address (Optional[str]): Street address for location-specific data.
-        
+
     Returns:
         Dict[str, Any]: Formatted API response with civic data.
     """
     return civic_api.get_election_info(address)
 
 
-def _add_calendar_reminder(election_day: str, election_name: str, token: Optional[str] = None) -> Dict[str, Any]:
+def _add_calendar_reminder(
+    election_day: str, election_name: str, token: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Add Election Day to Google Calendar via OAuth credentials.
-    
+
     Args:
         election_day (str): The date of the election (YYYY-MM-DD).
         election_name (str): The name of the election event.
         token (Optional[str]): The OAuth access token for the user.
-        
+
     Returns:
         Dict[str, Any]: Formatted API response indicating success or failure.
     """
@@ -208,7 +225,7 @@ def _add_calendar_reminder(election_day: str, election_name: str, token: Optiona
 
     try:
         creds = Credentials(token=token)
-        service = build_service('calendar', 'v3', credentials=creds)
+        service = build_service("calendar", "v3", credentials=creds)
 
         event_body = {
             "summary": f"🗳️ {election_name}",
@@ -219,23 +236,25 @@ def _add_calendar_reminder(election_day: str, election_name: str, token: Optiona
                 "useDefault": False,
                 "overrides": [
                     {"method": "email", "minutes": 1440},  # 1 day before
-                    {"method": "popup", "minutes": 120}    # 2 hours before
-                ]
-            }
+                    {"method": "popup", "minutes": 120},  # 2 hours before
+                ],
+            },
         }
 
         # Actually insert the event into the user's primary calendar
-        event = service.events().insert(calendarId='primary', body=event_body).execute()
-        
-        logger.info("Calendar event created for %s: %s", election_day, event.get('htmlLink'))
+        event = service.events().insert(calendarId="primary", body=event_body).execute()
+
+        logger.info(
+            "Calendar event created for %s: %s", election_day, event.get("htmlLink")
+        )
         return build_response(
             success=True,
             data={
-                "event": event_body, 
-                "link": event.get('htmlLink'), 
+                "event": event_body,
+                "link": event.get("htmlLink"),
                 "date": election_day,
-                "message": f"Calendar reminder set for {election_day}!"
-            }
+                "message": f"Calendar reminder set for {election_day}!",
+            },
         )
 
     except Exception as e:

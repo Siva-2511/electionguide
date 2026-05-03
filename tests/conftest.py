@@ -3,8 +3,18 @@ tests/conftest.py
 Shared fixtures and mocks for all test files.
 Central mock strategy — ensures consistent test behavior.
 """
+
 import pytest
 from unittest.mock import patch, MagicMock
+import gemini_logic
+
+
+@pytest.fixture(autouse=True)
+def reset_gemini_state():
+    """Reset global state between tests to prevent test pollution."""
+    gemini_logic._consecutive_failures = 0
+    gemini_logic._last_total_failure_time = 0
+    yield
 
 
 @pytest.fixture
@@ -38,7 +48,9 @@ def mock_gemini_success():
     with patch("gemini_logic.genai.Client") as mock_client_class:
         mock_client = MagicMock()
         mock_response = MagicMock()
-        mock_response.text = "To register to vote, visit vote.gov and fill out the registration form."
+        mock_response.text = (
+            "To register to vote, visit vote.gov and fill out the registration form."
+        )
         mock_client.models.generate_content.return_value = mock_response
         mock_client_class.return_value = mock_client
         yield mock_client_class
@@ -61,16 +73,20 @@ def mock_civic_success():
         "election_name": "2026 US General Election",
         "election_day": "2026-11-03",
         "election_day_display": "Tuesday, November 3, 2026",
-        "polling_locations": [{"name": "City Hall", "address": "123 Main St", "hours": "6AM-8PM"}],
+        "polling_locations": [
+            {"name": "City Hall", "address": "123 Main St", "hours": "6AM-8PM"}
+        ],
         "registration_deadline": "2026-10-04",
         "early_voting": "Oct 22–Nov 1",
         "absentee_info": "Request by Oct 27",
-        "source": "google_civic_api"
+        "source": "google_civic_api",
     }
     with patch("services.civic_api.requests.get") as mock_get:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
-        mock_resp.json.return_value = {"election": {"name": "2026 US General", "electionDay": "2026-11-03"}}
+        mock_resp.json.return_value = {
+            "election": {"name": "2026 US General", "electionDay": "2026-11-03"}
+        }
         mock_get.return_value = mock_resp
         yield mock_data
 
