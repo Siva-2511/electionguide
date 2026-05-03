@@ -76,8 +76,10 @@ def security_headers(response: Response) -> Response:
     """Add secure HTTP response headers."""
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
+    # No-cache to force browser to see current version during testing
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     response.headers["Content-Security-Policy"] = (
-        "default-src 'self' https: 'unsafe-inline' 'unsafe-eval' data: blob:;"
+        "default-src 'self' http: https: 'unsafe-inline' 'unsafe-eval' data: blob: *.google.com *.googleapis.com *.gstatic.com;"
     )
     return response
 
